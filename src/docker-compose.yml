@@ -1,0 +1,16 @@
+services:
+  central:
+    build:
+      context: .
+      dockerfile: central/central/Dockerfile
+  nginx:
+    image: nginx:1.31.8
+    container_name: nginx
+    expose:
+      - 80
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx:/etc/nginx/conf.d/:ro
+    restart: unless-stopped

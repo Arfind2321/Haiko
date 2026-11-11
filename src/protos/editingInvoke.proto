@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package haiko.protobuf;
+
+service SearcherDatabase {
+  rpc PushArticleChanges (PushArticleChangesRequest) returns (StatusResponse);
+  rpc PushArticleRemoval (ArticleRemovalRequest) returns (StatusResponse);
+}
+
+message PushArticleChangesRequest {
+    string ArticleId = 1;
+    string Title = 2;
+    repeated string Tags = 3;
+    repeated ArticlePartChanges Parts = 4;
+}
+
+message ArticleRemovalRequest {
+    string ArticleId = 1;
+}
+
+message StatusResponse {
+    bool isOK = 1;
+    optional string error = 2;
+}
+
+message ArticlePartChanges {
+    optional string Id = 1;
+    string Content = 2;
+}
