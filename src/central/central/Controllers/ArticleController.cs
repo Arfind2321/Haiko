@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using TANO.Models;
+using central.Models;
 
 namespace central.Controllers
 {
@@ -58,6 +58,23 @@ namespace central.Controllers
             if (userModel == null) return Unauthorized();
 
             ArticleEditingResult result = await _articleService.RemoveById(userModel, id);
+
+            return Ok(result);
+        }
+
+        [HttpPost("fork")]
+        [Authorize]
+        public async Task<IActionResult> ForkArticle([FromQuery] Guid id)
+        {
+            if (User.Identity == null) return Unauthorized();
+            if (!User.Identity.IsAuthenticated) return Unauthorized();
+            if (string.IsNullOrEmpty(User.Identity.Name)) return Unauthorized();
+
+            UserModel? userModel = await _userManager.FindByIdAsync(User.Identity.Name);
+
+            if (userModel == null) return Unauthorized();
+
+            ArticleEditingResult result = await _articleService.ForkArticle(userModel, id);
 
             return Ok(result);
         }

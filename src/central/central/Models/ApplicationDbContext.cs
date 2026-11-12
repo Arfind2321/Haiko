@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using central.Models.Comments;
+using Microsoft.EntityFrameworkCore;
 
 namespace central.Models
 {
@@ -6,6 +7,7 @@ namespace central.Models
     {
         public DbSet<ArticleModel> Articles { get; set; }
         public DbSet<ArticlePartModel> ArticleParts { get; set; }
+        public DbSet<UserComment> UserComments { get; set; }
 
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
              : base(options)

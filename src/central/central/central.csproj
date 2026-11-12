@@ -17,7 +17,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<Protobuf Include="$(MyProtoProjectRoot)/**/*.proto" ProtoRoot="$(MyProtoProjectRoot)"/>
+		<Protobuf Include="$(MyProtoProjectRoot)/**/*.proto" ProtoRoot="$(MyProtoProjectRoot)" />
 	</ItemGroup>
 
   <ItemGroup>

@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package haiko.protobuf;
+
+service ArticleDatabase {
+  rpc GetMinimalArticle (ArticleRequest) returns (MinimalArticle);
+}
+
+message MinimalArticle {
+    bool ok = 1;
+    optional string WriterId = 2;
+    optional string Title = 3;
+    repeated string Tags = 4;
+}
+
+message ArticleRequest {
+    string ArticleId = 1;
+}

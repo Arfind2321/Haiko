@@ -32,6 +32,9 @@ namespace central.Migrations
                     b.Property<bool>("IsForked")
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateTime>("LastEditTime")
+                        .HasColumnType("TEXT");
+
                     b.PrimitiveCollection<string>("Tags")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -63,11 +66,54 @@ namespace central.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<long>("DownVotes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("UpVotes")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ArticleModelId");
 
                     b.ToTable("ArticleParts");
+                });
+
+            modelBuilder.Entity("central.Models.Comments.UserComment", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("ArticlePartModelId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("DateTime")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("Dislikes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("Likes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long?>("UserCommentId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ArticlePartModelId");
+
+                    b.HasIndex("UserCommentId");
+
+                    b.ToTable("UserComments");
                 });
 
             modelBuilder.Entity("central.Models.ArticleModel", b =>
@@ -86,9 +132,30 @@ namespace central.Migrations
                         .HasForeignKey("ArticleModelId");
                 });
 
+            modelBuilder.Entity("central.Models.Comments.UserComment", b =>
+                {
+                    b.HasOne("central.Models.ArticlePartModel", null)
+                        .WithMany("Comments")
+                        .HasForeignKey("ArticlePartModelId");
+
+                    b.HasOne("central.Models.Comments.UserComment", null)
+                        .WithMany("Answers")
+                        .HasForeignKey("UserCommentId");
+                });
+
             modelBuilder.Entity("central.Models.ArticleModel", b =>
                 {
                     b.Navigation("Contents");
+                });
+
+            modelBuilder.Entity("central.Models.ArticlePartModel", b =>
+                {
+                    b.Navigation("Comments");
+                });
+
+            modelBuilder.Entity("central.Models.Comments.UserComment", b =>
+                {
+                    b.Navigation("Answers");
                 });
 #pragma warning restore 612, 618
         }

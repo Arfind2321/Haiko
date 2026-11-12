@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using TANO.Models;
 
 namespace central;
 
@@ -70,6 +69,7 @@ public static class Program
 
         builder.Services.AddScoped<ArticleCompletionService>();
         builder.Services.AddScoped<ArticleService>();
+        builder.Services.AddScoped<CommentService>();
 
         var app = builder.Build();
 

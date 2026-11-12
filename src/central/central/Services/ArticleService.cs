@@ -1,7 +1,6 @@
 ﻿using central.Models;
 using central.Models.ArticleEditing;
 using Haiko.Protobuf;
-using TANO.Models;
 
 namespace central.Services
 {
@@ -64,8 +63,22 @@ namespace central.Services
                 user.Articles.Add(articleModel);
             }
 
-            _applicationDbContext.SaveChanges();
+            await _applicationDbContext.SaveChangesAsync();
 
+            StatusResponse status = await UpdateArticle(articleModel);
+
+            if (status.IsOK)
+            {
+                return ArticleEditingResult.Ok(articleModel.Id);
+            }
+            else
+            {
+                return ArticleEditingResult.Error("Внутренняя ошибка");
+            }
+        }
+
+        public async Task<StatusResponse> UpdateArticle(ArticleModel articleModel)
+        {
             PushArticleChangesRequest pushArticleChangesRequest = new PushArticleChangesRequest()
             {
                 ArticleId = articleModel.Id.ToString(),
@@ -85,14 +98,40 @@ namespace central.Services
 
             StatusResponse resp = await _searcherDatabaseClient.PushArticleChangesAsync(pushArticleChangesRequest);
 
-            if (resp.IsOK)
+            return resp;
+        }
+
+        public async Task<ArticleEditingResult> ForkArticle(UserModel user, Guid id)
+        {
+            ArticleModel? articleModel = GetById(id);
+            if (articleModel == null)
             {
-                return ArticleEditingResult.Ok(articleModel.Id);
+                return ArticleEditingResult.Error("Не найдено");
             }
-            else
+
+            ArticleModel newModel = new()
             {
-                return ArticleEditingResult.Error("Внутренняя ошибка");
+                IsForked = true,
+                ForkedFrom = articleModel,
+                Title = articleModel.Title,
+                CreationTime = DateTime.Now,
+                LastEditTime = DateTime.Now,
+                WriterID = user.Id
+            };
+
+            foreach (var content in articleModel.Contents)
+            {
+                newModel.Contents.Add(CreatePart(content.Content, false));   
             }
+
+            newModel.Tags.AddRange(articleModel.Tags);
+
+            _applicationDbContext.Articles.Add(newModel);
+            user.Articles.Add(newModel);
+
+            await _applicationDbContext.SaveChangesAsync();
+
+            return ArticleEditingResult.Ok(newModel.Id);
         }
 
         public ArticleModel? GetById(Guid id)

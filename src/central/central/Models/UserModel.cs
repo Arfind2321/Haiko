@@ -1,8 +1,9 @@
 ﻿using central.Models;
+using central.Models.Comments;
 using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
 
-namespace TANO.Models
+namespace central.Models
 {
     public class UserModel : IdentityUser<Guid>
     {
@@ -15,5 +16,7 @@ namespace TANO.Models
         public List<ArticleModel> Articles { get; set; } = [];
 
         public List<ArticlePartCompletionStatus> ArticlePartCompletionStatuses { get; set; } = [];
+        public List<UserVoteInfo> UserVotes { get; set; } = [];
+        public List<UserCommentVoteInfo> UserCommentVotes { get; set; } = [];
     }
 }
