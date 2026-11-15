@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using central.Models;
+using System.Text.Json;
 
 namespace central.Controllers
 {
@@ -28,6 +29,41 @@ namespace central.Controllers
             _articleCompletionService = articleCompletionService;
         }
 
+        [HttpGet("tc")]
+        [Authorize]
+        public async Task<IActionResult> CreateOrEditArticle()
+        {
+            if (User.Identity == null) return Unauthorized("no id");
+            if (!User.Identity.IsAuthenticated) return Unauthorized("un a");
+            if (string.IsNullOrEmpty(User.Identity.Name)) return Unauthorized("null name");
+
+            UserModel? userModel = await _userManager.FindByNameAsync(User.Identity.Name);
+
+            if (userModel == null) return Unauthorized("no user");
+
+            ArticleEditingResult result = await _articleService.CreateOrEditArticle(userModel, new()
+            {
+                Title = "Привет это тестовая статья",
+                Tags = ["тест", "статья", "docker"],
+                Parts = [
+                    new() {
+                        Content = "Это первая часть этой статьи.",
+                        Title = "Первый!"
+                    },
+                    new() {
+                        Content = "Это вторая часть этой статьи.",
+                        Title = "Второй!"
+                    },
+                    new() {
+                        Content = "Это третья часть этой статьи.",
+                        Title = "Третий!"
+                    }
+                ]
+            });
+
+            return Ok(result);
+        }
+
         [HttpPost("createOrEdit")]
         [Authorize]
         public async Task<IActionResult> CreateOrEditArticle([FromBody] ArticleEditingRequest req)
@@ -36,7 +72,7 @@ namespace central.Controllers
             if (!User.Identity.IsAuthenticated) return Unauthorized();
             if (string.IsNullOrEmpty(User.Identity.Name)) return Unauthorized();
 
-            UserModel? userModel = await _userManager.FindByIdAsync(User.Identity.Name);
+            UserModel? userModel = await _userManager.FindByNameAsync(User.Identity.Name);
 
             if (userModel == null) return Unauthorized();
 
@@ -53,7 +89,7 @@ namespace central.Controllers
             if (!User.Identity.IsAuthenticated) return Unauthorized();
             if (string.IsNullOrEmpty(User.Identity.Name)) return Unauthorized();
 
-            UserModel? userModel = await _userManager.FindByIdAsync(User.Identity.Name);
+            UserModel? userModel = await _userManager.FindByNameAsync(User.Identity.Name);
 
             if (userModel == null) return Unauthorized();
 
@@ -70,7 +106,7 @@ namespace central.Controllers
             if (!User.Identity.IsAuthenticated) return Unauthorized();
             if (string.IsNullOrEmpty(User.Identity.Name)) return Unauthorized();
 
-            UserModel? userModel = await _userManager.FindByIdAsync(User.Identity.Name);
+            UserModel? userModel = await _userManager.FindByNameAsync(User.Identity.Name);
 
             if (userModel == null) return Unauthorized();
 
@@ -88,6 +124,8 @@ namespace central.Controllers
             {
                 return NotFound();
             }
+
+            Console.WriteLine(articleModel.Contents[0]);
 
             return Ok(articleModel);
         }

@@ -32,7 +32,7 @@ namespace central.Controllers
             if (!User.Identity.IsAuthenticated) return Unauthorized();
             if (string.IsNullOrEmpty(User.Identity.Name)) return Unauthorized();
 
-            UserModel? userModel = await _userManager.FindByIdAsync(User.Identity.Name);
+            UserModel? userModel = await _userManager.FindByNameAsync(User.Identity.Name);
 
             if (userModel == null) return Unauthorized();
 

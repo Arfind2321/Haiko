@@ -1,6 +1,7 @@
 ﻿using central.Models;
 using central.Models.ArticleEditing;
 using Haiko.Protobuf;
+using Microsoft.EntityFrameworkCore;
 
 namespace central.Services
 {
@@ -33,13 +34,13 @@ namespace central.Services
             articleModel.Tags = request.Tags;
             articleModel.WriterID = user.Id;
 
-            List<ArticlePartModel> newArticlePartList = [];
+            articleModel.Contents.Clear();
 
             foreach (ArticlePartEditingModel articlePartEditingModel in request.Parts)
             {
                 if (articlePartEditingModel.Id == null)
                 {
-                    newArticlePartList.Add(CreatePart(articlePartEditingModel.Content));
+                    articleModel.Contents.Add(CreatePart(articlePartEditingModel.Content));
                 }
                 else
                 {
@@ -48,12 +49,11 @@ namespace central.Services
                     if (articlePartModel != null)
                     {
                         articlePartModel.Content = articlePartEditingModel.Content;
-                        newArticlePartList.Add(articlePartModel);
+                        articlePartModel.Title = articlePartEditingModel.Title;
+                        articleModel.Contents.Add(articlePartModel);
                     }
                 }
             }
-
-            articleModel.Contents = newArticlePartList;
 
             articleModel.LastEditTime = DateTime.Now;
 
@@ -65,9 +65,9 @@ namespace central.Services
 
             await _applicationDbContext.SaveChangesAsync();
 
-            StatusResponse status = await UpdateArticle(articleModel);
+            //StatusResponse status = await UpdateArticle(articleModel);
 
-            if (status.IsOK)
+            if (true)//status.IsOK)
             {
                 return ArticleEditingResult.Ok(articleModel.Id);
             }
@@ -92,6 +92,7 @@ namespace central.Services
                 pushArticleChangesRequest.Parts.Add(new ArticlePartChanges()
                 {
                     Id = part.Id.ToString(),
+                    Title = part.Title,
                     Content = part.Content
                 });
             }
@@ -109,13 +110,15 @@ namespace central.Services
                 return ArticleEditingResult.Error("Не найдено");
             }
 
+            DateTime now = DateTime.Now;
+
             ArticleModel newModel = new()
             {
                 IsForked = true,
                 ForkedFrom = articleModel,
                 Title = articleModel.Title,
-                CreationTime = DateTime.Now,
-                LastEditTime = DateTime.Now,
+                CreationTime = now,
+                LastEditTime = now,
                 WriterID = user.Id
             };
 
@@ -136,12 +139,22 @@ namespace central.Services
 
         public ArticleModel? GetById(Guid id)
         {
-            return _applicationDbContext.Articles.Where(x => x.Id == id).FirstOrDefault();
+            ArticleModel? model = _applicationDbContext.Articles.Where(x => x.Id == id).FirstOrDefault();
+            if (model == null) return null;
+
+            _applicationDbContext.ArticleParts.Load();
+
+            return model;
         }
 
         public ArticleModel? GetById(Guid id, UserModel user)
         {
-            return user.Articles.FirstOrDefault(x => x.Id == id);
+            ArticleModel? model = user.Articles.FirstOrDefault(x => x.Id == id);
+            if (model == null) return null;
+
+            _applicationDbContext.ArticleParts.Load();
+
+            return model;
         }
 
         public async Task<ArticleEditingResult> RemoveById(UserModel user, Guid id)
@@ -177,7 +190,13 @@ namespace central.Services
 
         public ArticlePartModel? GetPartById(Guid id)
         {
-            return _applicationDbContext.ArticleParts.Where(x => x.Id == id).FirstOrDefault();
+            ArticlePartModel? model = _applicationDbContext.ArticleParts.Where(x => x.Id == id).FirstOrDefault();
+
+            if (model == null) return null;
+
+            _applicationDbContext.UserComments.Load();
+
+            return model;
         }
     }
 }

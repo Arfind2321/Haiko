@@ -4,6 +4,7 @@ using Haiko.Protobuf;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
@@ -11,8 +12,6 @@ namespace central;
 
 public static class Program
 {
-    public static TokenValidationParameters tvp;
-
     public static void Main(string[] args)
     {
 
@@ -29,29 +28,26 @@ public static class Program
             o.UseSqlite("Data Source=app.db");
         });
 
-        tvp = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
-        };
-
-
-        builder.Services.AddAuthentication(config =>
-        {
-            config.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-            //config.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
-        })
-                       .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme,
-                           options =>
+        builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                       .AddJwtBearer(options =>
                            {
-                               options.TokenValidationParameters = tvp;
+                               options.TokenValidationParameters = new TokenValidationParameters
+                               {
+                                   ValidateIssuer = true,
+                                   ValidateAudience = true,
+                                   ValidateLifetime = true,
+                                   ValidateIssuerSigningKey = true,
+                                   ValidIssuer = builder.Configuration["Jwt:Issuer"],
+                                   ValidAudience = builder.Configuration["Jwt:Audience"],
+                                   IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+                               };
                            }
-                       );
+                       )
+                       .AddYandex(options =>
+                       {
+                           options.ClientId = "a735a49422424ff0801141d9c1e9305c";
+                           options.ClientSecret = "1e48946439c34fa0ad15e3a653130bef";
+                       });
 
 
         builder.Services.AddIdentity<UserModel, IdentityRole<Guid>>()
@@ -81,6 +77,7 @@ public static class Program
 
         app.UseHttpsRedirection();
 
+        app.UseAuthentication();
         app.UseAuthorization();
 
         app.MapControllers();

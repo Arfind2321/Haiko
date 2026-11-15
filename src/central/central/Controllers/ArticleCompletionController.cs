@@ -33,13 +33,30 @@ namespace central.Controllers
             if (!User.Identity.IsAuthenticated) return Unauthorized();
             if (string.IsNullOrEmpty(User.Identity.Name)) return Unauthorized();
 
-            UserModel? userModel = await _userManager.FindByIdAsync(User.Identity.Name);
+            UserModel? userModel = await _userManager.FindByNameAsync(User.Identity.Name);
 
             if (userModel == null) return Unauthorized();
 
             List<Guid> ids = _articleCompletionService.GetCompletionByArticleId(userModel, id);
 
             return Ok(ids);
+        }
+
+        [HttpGet("clear")]
+        [Authorize]
+        public async Task<IActionResult> ClearArticleComplectionStatus([FromQuery] Guid id)
+        {
+            if (User.Identity == null) return Unauthorized();
+            if (!User.Identity.IsAuthenticated) return Unauthorized();
+            if (string.IsNullOrEmpty(User.Identity.Name)) return Unauthorized();
+
+            UserModel? userModel = await _userManager.FindByNameAsync(User.Identity.Name);
+
+            if (userModel == null) return Unauthorized();
+
+            bool ok = _articleCompletionService.ClearCompletionByArticleId(userModel, id);
+
+            return Ok(ok);
         }
 
         [HttpGet("set")]
@@ -50,7 +67,7 @@ namespace central.Controllers
             if (!User.Identity.IsAuthenticated) return Unauthorized();
             if (string.IsNullOrEmpty(User.Identity.Name)) return Unauthorized();
 
-            UserModel? userModel = await _userManager.FindByIdAsync(User.Identity.Name);
+            UserModel? userModel = await _userManager.FindByNameAsync(User.Identity.Name);
 
             if (userModel == null) return Unauthorized();
 

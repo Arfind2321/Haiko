@@ -10,11 +10,13 @@ namespace central.Services
     {
         private readonly UserManager<UserModel> _userManager;
         private readonly ILogger<ArticleCompletionService> _logger;
+        private readonly ApplicationDbContext _applicationDbContext;
 
-        public ArticleCompletionService( UserManager<UserModel> userManager, ILogger<ArticleCompletionService> logger)
+        public ArticleCompletionService( UserManager<UserModel> userManager, ILogger<ArticleCompletionService> logger, ApplicationDbContext applicationDbContext)
         {
             _userManager = userManager;
             _logger = logger;
+            _applicationDbContext = applicationDbContext;
         }
 
         public async Task<bool> ChangeCompletionStatusArticlePart(UserModel user, Guid aid, Guid apid, bool IsCompleted)
@@ -53,14 +55,30 @@ namespace central.Services
 
         public List<Guid> GetCompletionByArticleId(UserModel user, Guid aid)
         {
-            ArticlePartCompletionStatus ArticlePartCompletionStatus = GetCompletionStatusByArticleId(user, aid);
+            ArticlePartCompletionStatus? ArticlePartCompletionStatus = GetCompletionStatusByArticleId(user, aid);
+
+            if (ArticlePartCompletionStatus == null)
+            {
+                ArticlePartCompletionStatus = new();
+                user.ArticlePartCompletionStatuses.Add(ArticlePartCompletionStatus);
+                _applicationDbContext.SaveChanges();
+            }
 
             return ArticlePartCompletionStatus.CompletedPartIDs;
         }
 
-        public ArticlePartCompletionStatus GetCompletionStatusByArticleId(UserModel user, Guid aid)
+        public bool ClearCompletionByArticleId(UserModel user, Guid aid)
         {
-            return user.ArticlePartCompletionStatuses.FirstOrDefault(x => x.ArticleId == aid, new());
+            GetCompletionByArticleId(user, aid).Clear();
+
+            _applicationDbContext.SaveChanges();
+
+            return true;
+        }
+
+        public ArticlePartCompletionStatus? GetCompletionStatusByArticleId(UserModel user, Guid aid)
+        {
+            return user.ArticlePartCompletionStatuses.FirstOrDefault(x => x.ArticleId == aid);
         }
     }
 }

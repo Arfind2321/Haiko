@@ -1,5 +1,10 @@
+name: haiko
+
 services:
   central:
+    environment:
+      DATABASE_USERNAME: "fhe98cew8uhxruehr89weu9rx"
+      DATABASE_PASSWORD: "xfu8wef89xsudiahs%9ufgsudid"
     build:
       context: .
       dockerfile: central/central/Dockerfile

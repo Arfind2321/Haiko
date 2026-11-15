@@ -1,0 +1,229 @@
+﻿using AspNet.Security.OAuth.Yandex;
+using central.Models;
+using central.Models.Auth;
+using central.Models.Auth;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+
+namespace central.Controllers
+{
+    [Route("auth")]
+    [ApiController]
+    public class AccountController : ControllerBase
+    {
+        private readonly UserManager<UserModel> _userManager;
+        private readonly SignInManager<UserModel> _signInManager;
+        private readonly IConfiguration _configuration;
+
+        public AccountController(UserManager<UserModel> userManager, SignInManager<UserModel> signInManager, IConfiguration configuration)
+        {
+            _userManager = userManager;
+            _signInManager = signInManager;
+            _configuration = configuration;
+        }
+
+        private async Task<string> GenerateJwtToken(UserModel user)
+        {
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Name, user.UserName)
+            };
+
+            var roles = await _userManager.GetRolesAsync(user);
+            foreach (var role in roles)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, role));
+            }
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature);
+
+            var token = new JwtSecurityToken(
+                issuer: _configuration["Jwt:Issuer"],
+                audience: _configuration["Jwt:Audience"],
+                claims: claims,
+                expires: DateTime.UtcNow.AddDays(1),
+                signingCredentials: creds
+            );
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+
+        [HttpPost("register")]
+        public async Task<IActionResult> RegisterView([FromBody] RegisterViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                var result = await Register(model.Username, model.Password);
+
+                if (result.Item1.Succeeded)
+                {
+                    if (result.Item2 == null) return StatusCode(403);
+
+                    //await _signInManager.SignInAsync(result.Item2, true);
+
+                    return Ok(await GenerateJwtToken(result.Item2));
+                }
+            }
+
+            return BadRequest(ModelState);
+        }
+
+        public async Task<(IdentityResult, UserModel)> Register(string username, string? password = null)
+        {
+            var user = new UserModel { UserName = username };
+            if (string.IsNullOrEmpty(password))
+            {
+                return (await _userManager.CreateAsync(user), user);
+            }
+            else
+            {
+                return (await _userManager.CreateAsync(user, password), user);
+            }
+        }
+
+        public async Task<IdentityResult> Login(string username, string? password = null)
+        {
+            var user = new UserModel { UserName = username };
+            if (string.IsNullOrEmpty(password))
+            {
+                return await _userManager.CreateAsync(user);
+            }
+            else
+            {
+                return await _userManager.CreateAsync(user, password);
+            }
+        }
+
+        [HttpGet("auth-yandex")]
+        [Authorize(AuthenticationSchemes = YandexAuthenticationDefaults.AuthenticationScheme)]
+        public async Task<IActionResult> AuthYandex()
+        {
+            if (!User.Identity.IsAuthenticated)
+            {
+                return Unauthorized();
+            }
+
+            var userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return BadRequest();
+            }
+
+            var user = await _userManager.FindByNameAsync(userId);
+
+            if (user == null)
+            {
+                var result = await Register(userId);
+                return Ok(await GenerateJwtToken(result.Item2));
+            }
+            else
+            {
+                return Ok(await GenerateJwtToken(user));
+            }
+
+        }
+
+        public async Task SignInAsync(UserModel user, string authType = "pwd")
+        {
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Name, user.UserName)
+            };
+            ClaimsIdentity id = new ClaimsIdentity(claims, authType, ClaimsIdentity.DefaultNameClaimType, ClaimsIdentity.DefaultRoleClaimType);
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(id));
+        }
+
+        [HttpGet("loginC/{u}/{p}")]
+        public async Task<IActionResult> LoginGet(string u, string p)
+        {
+            if (ModelState.IsValid)
+            {
+                var user = await _userManager.FindByNameAsync(u);
+                if (await _userManager.CheckPasswordAsync(user, p))
+                {
+                    return Ok(await GenerateJwtToken(user));
+                }
+            }
+
+            return BadRequest("Неправильный логин или пароль 2");
+        }
+
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                var result = await _signInManager.PasswordSignInAsync(model.Username, model.Password, true, lockoutOnFailure: false);
+
+                if (result.Succeeded)
+                {
+
+                    var user = await _userManager.FindByNameAsync(model.Username);
+
+                    if (user == null) return StatusCode(403);
+
+                    return Ok(await GenerateJwtToken(user));
+                }
+
+                return BadRequest("Неправильный логин или пароль");
+            }
+
+            return BadRequest("Некорректный запрос");
+        }
+
+        [HttpGet("logout")]
+        [Authorize]
+        public async Task<IActionResult> Logout()
+        {
+            await _signInManager.SignOutAsync();
+            return Redirect("/");
+        }
+
+        [HttpGet("me")]
+        [Authorize]
+        public async Task<IActionResult> UserInfo()
+        {
+            if (!User.Identity.IsAuthenticated)
+            {
+                return Unauthorized();
+            }
+
+            var userName = User.FindFirst(ClaimTypes.Name)?.Value;
+            if (string.IsNullOrEmpty(userName)) return Unauthorized();
+
+            var user = await _userManager.FindByNameAsync(userName);
+
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            return Ok(new MeResponse
+            {
+                Id = user.Id,
+                UserName = user.UserName,
+                Articles = user.Articles
+            });
+        }
+
+        public class MeResponse
+        {
+            public Guid Id { get; set; }
+            public string UserName { get; set; }
+            public List<ArticleModel> Articles { get; set; }
+        }
+    }
+}

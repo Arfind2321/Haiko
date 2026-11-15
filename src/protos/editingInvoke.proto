@@ -25,5 +25,6 @@ message StatusResponse {
 
 message ArticlePartChanges {
     optional string Id = 1;
-    string Content = 2;
+    string Title = 2;
+    string Content = 3;
 }
