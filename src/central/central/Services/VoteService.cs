@@ -1,6 +1,8 @@
 ﻿using central.Models;
 using central.Models.ArticleEditing;
 using central.Models.Comments;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace central.Services
 {
@@ -8,10 +10,12 @@ namespace central.Services
     {
         private readonly ApplicationDbContext _applicationDbContext;
         private readonly ArticleService _articleService;
-        public VoteService(ApplicationDbContext applicationDbContext, ArticleService articleService) 
+        private readonly UserManager<UserModel> _userManager;
+        public VoteService(ApplicationDbContext applicationDbContext, ArticleService articleService, UserManager<UserModel> userManager) 
         {
             _applicationDbContext = applicationDbContext;
             _articleService = articleService;
+            _userManager = userManager;
         }
 
         public async Task<VoteResult> VoteUnvote(UserModel user, Guid pid, UserVoteType vote)
@@ -30,48 +34,62 @@ namespace central.Services
 
                 user.UserVotes.Add(uvi);
 
-                UpdateArticlePartVote(articlePartModel, vote);
+                UpdateArticlePartVote(articlePartModel, vote, true);
 
-                await _applicationDbContext.SaveChangesAsync();
+                await _userManager.UpdateAsync(user);
 
                 return VoteResult.Ok(true);
             }
 
-            UserVoteInfo userVote = GetUserVote(user, pid);
+            UserVoteInfo userVote = GetUserVote(user, pid)!;
 
             if (userVote.Type == vote)
             {
                 user.UserVotes.Remove(userVote);
 
-                UpdateArticlePartVote(articlePartModel, vote);
+                UpdateArticlePartVote(articlePartModel, vote, false);
 
-                await _applicationDbContext.SaveChangesAsync();
+                await _userManager.UpdateAsync(user);
 
                 return VoteResult.Ok(false);
             }
             else
             {
+                UpdateArticlePartVote(articlePartModel, userVote.Type, false);
+
                 userVote.Type = vote;
 
-                UpdateArticlePartVote(articlePartModel, vote);
+                UpdateArticlePartVote(articlePartModel, vote, true);
 
-                await _applicationDbContext.SaveChangesAsync();
+                await _userManager.UpdateAsync(user);
 
                 return VoteResult.Ok(true);
             }
         }
 
-        public void UpdateArticlePartVote(ArticlePartModel articlePartModel, UserVoteType vote)
+        public void UpdateArticlePartVote(ArticlePartModel articlePartModel, UserVoteType vote, bool isChecked)
         {
             if (vote == UserVoteType.Up)
             {
-                articlePartModel.UpVotes++;
-                articlePartModel.DownVotes--;
+                if (isChecked)
+                {
+                    articlePartModel.UpVotes++;
+                }
+                else
+                {
+                    articlePartModel.UpVotes--;
+                }
             }
             else
             {
-                articlePartModel.UpVotes--;
-                articlePartModel.DownVotes++;
+                if (isChecked)
+                {
+                    articlePartModel.DownVotes++;
+                }
+                else
+                {
+                    articlePartModel.DownVotes--;
+                }
             }
         }
 
@@ -87,6 +105,7 @@ namespace central.Services
 
         public UserVoteInfo? GetUserVote(UserModel user, Guid pid)
         {
+            _applicationDbContext.UserVotes.Load();
             return user.UserVotes.FirstOrDefault(x => x.ArticlePartId == pid);
         }
     }

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:go_router/go_router.dart';
 import 'package:haiko/models/article_model.dart';
 import 'package:haiko/pages/error_page.dart';
 import 'package:haiko/widgets/article_part_widget.dart';
@@ -19,6 +20,7 @@ class ArticlePage extends StatefulWidget  {
 }
 
 class ArticlePageState extends State<ArticlePage> {
+  String writerName = "Неизвестный писатель";
   ArticleModel? model;
   late List<String> completedParts;
 
@@ -43,6 +45,26 @@ class ArticlePageState extends State<ArticlePage> {
     catch (ex) {
       developer.log(ex.toString(), name: 'haiko');
       return null;
+    }
+  }
+
+  Future getWriter() async {
+    try {
+      http.Response resp = await http.get(
+        Uri.parse("http://localhost/api/central/users/get?id=${model!.writerID}"),
+        headers: {
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (resp.statusCode == 200) {
+        Map<String, dynamic> respContent = jsonDecode(resp.body) as Map<String, dynamic>;
+        writerName = respContent["name"] ?? "Неизвестный писатель";
+      }
+    }
+    catch (ex) {
+      developer.log(ex.toString(), name: 'haiko');
     }
   }
 
@@ -163,13 +185,15 @@ class ArticlePageState extends State<ArticlePage> {
 
     if (articleModel == null) {
       setState(() {
-        Route route = MaterialPageRoute(builder: (context) => ErrorPage(error: "Статья не найдена"));
-        Navigator.pushReplacement(context, route);
+        //Route route = MaterialPageRoute(builder: (context) => ErrorPage(error: "Статья не найдена"));
+        GoRouter.of(context).pushReplacement("/error", extra: {"e": "Статья не найдена"});
       });
       return;
     }
 
     completedParts = await getArticleCompletion();
+
+    await getWriter();
 
     setState(() {
       model = articleModel;
@@ -198,7 +222,7 @@ class ArticlePageState extends State<ArticlePage> {
         ArticlePartWidget apw = ArticlePartWidget(model: model, completed: false, available: stopShowing ? false : true, show: stopShowing ? false : true, callback: (a,b) => setArticleCompletion(a, b));
         _parts.add(apw);
         if (!stopShowing) {
-          Scrollable.ensureVisible(apw.dataKey.currentContext!);
+          //Scrollable.ensureVisible(apw.dataKey.currentContext!);
         }
         if (!stopShowing) stopShowing = true;
       }
@@ -223,7 +247,7 @@ class ArticlePageState extends State<ArticlePage> {
       );
 
       if (resp.statusCode == 200) {
-        List<String> respContent = jsonDecode(resp.body) as List<String>;
+        List<String> respContent = (jsonDecode(resp.body) as List<dynamic>).map((data) => data as String).toList();
         await setCompletionToLocalStorage(respContent);
         return respContent;
       }
@@ -233,8 +257,6 @@ class ArticlePageState extends State<ArticlePage> {
       }
     }
     catch (ex) {
-      developer.log(ex.toString(), name: 'haiko');
-
       // возвращает то, что сохранено локально
       return await getCompletionFromLocalStorage();
     }
@@ -294,7 +316,9 @@ class ArticlePageState extends State<ArticlePage> {
               ),
               Row(
                 children: [
-                  Text("Последнее изменение: ${model!.lastEditTime.toString()}")
+                  Text("Последнее изменение: ${model!.lastEditTime.toString()}"),
+                  Text(" - "),
+                  Text("Написал: $writerName")
                 ],
               ),
               TextButton(onPressed: () async {

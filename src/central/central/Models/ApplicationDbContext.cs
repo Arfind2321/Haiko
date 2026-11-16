@@ -10,6 +10,9 @@ namespace central.Models
         public DbSet<ArticleModel> Articles { get; set; }
         public DbSet<ArticlePartModel> ArticleParts { get; set; }
         public DbSet<UserComment> UserComments { get; set; }
+        public DbSet<ArticlePartCompletionStatus> ArticlePartCompletionStatuses { get; set; }
+        public DbSet<UserVoteInfo> UserVotes { get; set; }
+        public DbSet<UserCommentVoteInfo> UserCommentVotes { get; set; }
 
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
              : base(options)

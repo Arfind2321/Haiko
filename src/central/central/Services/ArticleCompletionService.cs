@@ -1,8 +1,8 @@
 ﻿using central.Models;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System.Security.Cryptography;
-using central.Models;
 
 namespace central.Services
 {
@@ -23,7 +23,18 @@ namespace central.Services
         {
             try
             {
-                ArticlePartCompletionStatus ArticlePartCompletionStatus = GetCompletionStatusByArticleId(user, aid);
+                ArticlePartCompletionStatus? ArticlePartCompletionStatus = GetCompletionStatusByArticleId(user, aid);
+
+                if (ArticlePartCompletionStatus == null)
+                {
+                    ArticlePartCompletionStatus = new ArticlePartCompletionStatus()
+                    {
+                        ArticleId = aid,
+                        CompletedPartIDs = []
+                    };
+
+                    user.ArticlePartCompletionStatuses.Add(ArticlePartCompletionStatus);
+                }
 
                 if (IsCompleted)
                 {
@@ -78,6 +89,7 @@ namespace central.Services
 
         public ArticlePartCompletionStatus? GetCompletionStatusByArticleId(UserModel user, Guid aid)
         {
+            _applicationDbContext.ArticlePartCompletionStatuses.Load();
             return user.ArticlePartCompletionStatuses.FirstOrDefault(x => x.ArticleId == aid);
         }
     }

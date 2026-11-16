@@ -4,6 +4,7 @@ using central.Models.Auth;
 using central.Models.Auth;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -93,19 +94,7 @@ namespace central.Controllers
             }
         }
 
-        public async Task<IdentityResult> Login(string username, string? password = null)
-        {
-            var user = new UserModel { UserName = username };
-            if (string.IsNullOrEmpty(password))
-            {
-                return await _userManager.CreateAsync(user);
-            }
-            else
-            {
-                return await _userManager.CreateAsync(user, password);
-            }
-        }
-
+        // Да, тут есть авторизация через Яндекс, но она почему то она полностью не работает и мне лень с этим возиться в связи "ограниченного бюджета" и наличием более важных вещей, которым нужно уделить время. Если вы видите это строчку, то я так и не поймал мотивацию чинить это и делать поддержку на стороне клиента.
         [HttpGet("auth-yandex")]
         [Authorize(AuthenticationSchemes = YandexAuthenticationDefaults.AuthenticationScheme)]
         public async Task<IActionResult> AuthYandex()
@@ -135,17 +124,6 @@ namespace central.Controllers
 
         }
 
-        public async Task SignInAsync(UserModel user, string authType = "pwd")
-        {
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.UserName)
-            };
-            ClaimsIdentity id = new ClaimsIdentity(claims, authType, ClaimsIdentity.DefaultNameClaimType, ClaimsIdentity.DefaultRoleClaimType);
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(id));
-        }
-
         [HttpGet("loginC/{u}/{p}")]
         public async Task<IActionResult> LoginGet(string u, string p)
         {
@@ -166,15 +144,14 @@ namespace central.Controllers
         {
             if (ModelState.IsValid)
             {
-                var result = await _signInManager.PasswordSignInAsync(model.Username, model.Password, true, lockoutOnFailure: false);
+                var user = await _userManager.FindByNameAsync(model.Username);
 
-                if (result.Succeeded)
+                if (user == null) return StatusCode(403);
+
+                var result = await _userManager.CheckPasswordAsync(user, model.Password);
+
+                if (result)
                 {
-
-                    var user = await _userManager.FindByNameAsync(model.Username);
-
-                    if (user == null) return StatusCode(403);
-
                     return Ok(await GenerateJwtToken(user));
                 }
 
@@ -193,7 +170,7 @@ namespace central.Controllers
         }
 
         [HttpGet("me")]
-        [Authorize]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> UserInfo()
         {
             if (!User.Identity.IsAuthenticated)

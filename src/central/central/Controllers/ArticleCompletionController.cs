@@ -1,15 +1,17 @@
 ﻿using central.Models;
+using central.Models;
 using central.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using central.Models;
 
 namespace central.Controllers
 {
     [Route("completion")]
     [ApiController]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public class ArticleCompletionController : ControllerBase
     {
         private readonly UserManager<UserModel> _userManager;
@@ -26,11 +28,9 @@ namespace central.Controllers
         }
 
         [HttpGet("get")]
-        [Authorize]
         public async Task<IActionResult> GetArticleComplectionStatus([FromQuery] Guid id)
         {
             if (User.Identity == null) return Unauthorized();
-            if (!User.Identity.IsAuthenticated) return Unauthorized();
             if (string.IsNullOrEmpty(User.Identity.Name)) return Unauthorized();
 
             UserModel? userModel = await _userManager.FindByNameAsync(User.Identity.Name);
@@ -43,11 +43,9 @@ namespace central.Controllers
         }
 
         [HttpGet("clear")]
-        [Authorize]
         public async Task<IActionResult> ClearArticleComplectionStatus([FromQuery] Guid id)
         {
             if (User.Identity == null) return Unauthorized();
-            if (!User.Identity.IsAuthenticated) return Unauthorized();
             if (string.IsNullOrEmpty(User.Identity.Name)) return Unauthorized();
 
             UserModel? userModel = await _userManager.FindByNameAsync(User.Identity.Name);
@@ -60,11 +58,9 @@ namespace central.Controllers
         }
 
         [HttpGet("set")]
-        [Authorize]
         public async Task<IActionResult> SetArticleComplectionStatus([FromQuery] Guid id, [FromQuery] Guid pid, [FromQuery] bool ic)
         {
             if (User.Identity == null) return Unauthorized();
-            if (!User.Identity.IsAuthenticated) return Unauthorized();
             if (string.IsNullOrEmpty(User.Identity.Name)) return Unauthorized();
 
             UserModel? userModel = await _userManager.FindByNameAsync(User.Identity.Name);

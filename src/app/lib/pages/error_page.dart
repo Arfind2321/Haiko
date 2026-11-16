@@ -1,3 +1,4 @@
+import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 class ErrorPage extends StatelessWidget {
@@ -16,7 +17,7 @@ class ErrorPage extends StatelessWidget {
         TextButton(
           child: Text("Назад"), 
           onPressed: () => {
-            Navigator.pop(context)
+            GoRouter.of(context).pop()
           }
         )
       ],

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using central.Models;
 using System.Text.Json;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace central.Controllers
 {
@@ -30,11 +31,10 @@ namespace central.Controllers
         }
 
         [HttpGet("tc")]
-        [Authorize]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> CreateOrEditArticle()
         {
             if (User.Identity == null) return Unauthorized("no id");
-            if (!User.Identity.IsAuthenticated) return Unauthorized("un a");
             if (string.IsNullOrEmpty(User.Identity.Name)) return Unauthorized("null name");
 
             UserModel? userModel = await _userManager.FindByNameAsync(User.Identity.Name);
@@ -65,11 +65,10 @@ namespace central.Controllers
         }
 
         [HttpPost("createOrEdit")]
-        [Authorize]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> CreateOrEditArticle([FromBody] ArticleEditingRequest req)
         {
             if (User.Identity == null) return Unauthorized();
-            if (!User.Identity.IsAuthenticated) return Unauthorized();
             if (string.IsNullOrEmpty(User.Identity.Name)) return Unauthorized();
 
             UserModel? userModel = await _userManager.FindByNameAsync(User.Identity.Name);
@@ -82,11 +81,10 @@ namespace central.Controllers
         }
 
         [HttpDelete("remove")]
-        [Authorize]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> RemoveArticle([FromQuery] Guid id)
         {
             if (User.Identity == null) return Unauthorized();
-            if (!User.Identity.IsAuthenticated) return Unauthorized();
             if (string.IsNullOrEmpty(User.Identity.Name)) return Unauthorized();
 
             UserModel? userModel = await _userManager.FindByNameAsync(User.Identity.Name);
@@ -99,11 +97,10 @@ namespace central.Controllers
         }
 
         [HttpPost("fork")]
-        [Authorize]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> ForkArticle([FromQuery] Guid id)
         {
             if (User.Identity == null) return Unauthorized();
-            if (!User.Identity.IsAuthenticated) return Unauthorized();
             if (string.IsNullOrEmpty(User.Identity.Name)) return Unauthorized();
 
             UserModel? userModel = await _userManager.FindByNameAsync(User.Identity.Name);

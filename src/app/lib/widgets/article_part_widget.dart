@@ -1,5 +1,13 @@
+import 'dart:convert';
+
 import 'package:haiko/models/article_part_model.dart';
+import 'package:haiko/models/user_vote_model.dart';
+import 'package:haiko/widgets/article_part_rating_widget.dart';
 import 'package:material_ui/material_ui.dart';
+import 'dart:developer' as developer;
+
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 //ignore: must_be_immutable
 class ArticlePartWidget extends StatefulWidget  {
@@ -26,8 +34,55 @@ class ArticlePartWidgetState extends State<ArticlePartWidget> {
   });
   }
 
+  UserVoteModel? voteModel;
+
+  Future<bool> getUserVote() async {
+    try {
+      http.Response resp = await http.get(
+        Uri.parse("http://localhost/api/central/voting/get?id=${widget.model.id}"),
+        headers: {
+          'Authorization': 'Bearer $atoken',
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (resp.statusCode == 200) {
+        if (resp.body != '"non"') {
+          voteModel = UserVoteModel.fromJson(jsonDecode(resp.body) as Map<String, Object?>);
+        }
+        
+        return true;
+      }
+      else {
+        return false;
+      }
+    }
+    catch (ex) {
+      developer.log(ex.toString(), name: 'haiko');
+
+      return false;
+    }
+  }
+
+  bool authorized = false;
+  String atoken = "";
+
   void asyncinitState() async {
-    
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    String? token = prefs.getString("token");
+
+    if (token != null) {
+      authorized = true;
+      atoken = token;
+
+      await getUserVote();
+
+      setState(() {
+        
+      });
+    }
   }
 
   void complete() async {
@@ -95,10 +150,14 @@ class ArticlePartWidgetState extends State<ArticlePartWidget> {
                   )
                 ),
                 if (!widget.completed && widget.available)
-                TextButton(onPressed: () async {
-                  await widget.callback(widget.model.id, true);
-                  setState(() {});
-                }, child: Text("Завершить"))
+                TextButton(
+                  onPressed: () async {
+                    await widget.callback(widget.model.id, true);
+                    setState(() {});
+                  }, 
+                  child: Text("Завершить")
+                ),
+                ArticlePartRatingWidget(model: widget.model, available: widget.available, show: true, voteModel: voteModel)
               ],
             )
           )

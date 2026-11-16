@@ -31,7 +31,7 @@ public static class Program
         builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                        .AddJwtBearer(options =>
                            {
-                               options.TokenValidationParameters = new TokenValidationParameters
+                               options.TokenValidationParameters = new TokenValidationParameters()
                                {
                                    ValidateIssuer = true,
                                    ValidateAudience = true,
@@ -42,12 +42,13 @@ public static class Program
                                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
                                };
                            }
-                       )
+                       );
+                       /*
                        .AddYandex(options =>
                        {
                            options.ClientId = "a735a49422424ff0801141d9c1e9305c";
                            options.ClientSecret = "1e48946439c34fa0ad15e3a653130bef";
-                       });
+                       })*/
 
 
         builder.Services.AddIdentity<UserModel, IdentityRole<Guid>>()
@@ -66,6 +67,7 @@ public static class Program
         builder.Services.AddScoped<ArticleCompletionService>();
         builder.Services.AddScoped<ArticleService>();
         builder.Services.AddScoped<CommentService>();
+        builder.Services.AddScoped<VoteService>();
 
         var app = builder.Build();
 
@@ -79,6 +81,8 @@ public static class Program
 
         app.UseAuthentication();
         app.UseAuthorization();
+
+        app.MapGrpcService<ArticleDatabaseGrpcService>();
 
         app.MapControllers();
 

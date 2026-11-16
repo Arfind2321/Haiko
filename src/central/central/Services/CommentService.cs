@@ -1,5 +1,7 @@
 ﻿using central.Models;
 using central.Models.Comments;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace central.Services
 {
@@ -7,10 +9,12 @@ namespace central.Services
     {
         private readonly ApplicationDbContext _applicationDbContext;
         private readonly ArticleService _articleService;
-        public CommentService(ApplicationDbContext applicationDbContext, ArticleService articleService)
+        private readonly UserManager<UserModel> _userManager;
+        public CommentService(ApplicationDbContext applicationDbContext, ArticleService articleService, UserManager<UserModel> userManager)
         {
             _applicationDbContext = applicationDbContext;
             _articleService = articleService;
+            _userManager = userManager;
         }
 
         public async Task<bool> PublishComment(UserModel user, Guid pid, string content, long? commentID = null)
@@ -85,48 +89,62 @@ namespace central.Services
 
                 user.UserCommentVotes.Add(uvi);
 
-                UpdateCommentVote(comment, vote);
+                UpdateCommentVote(comment, vote, true);
 
-                await _applicationDbContext.SaveChangesAsync();
+                await _userManager.UpdateAsync(user);
 
                 return VoteResult.Ok(true);
             }
 
-            UserCommentVoteInfo userVote = GetUserVote(user, id);
+            UserCommentVoteInfo userVote = GetUserVote(user, id)!;
 
             if (userVote.Type == vote)
             {
                 user.UserCommentVotes.Remove(userVote);
 
-                UpdateCommentVote(comment, vote);
+                UpdateCommentVote(comment, vote, false);
 
-                await _applicationDbContext.SaveChangesAsync();
+                await _userManager.UpdateAsync(user);
 
                 return VoteResult.Ok(false);
             }
             else
             {
+                UpdateCommentVote(comment, userVote.Type, false);
+
                 userVote.Type = vote;
 
-                UpdateCommentVote(comment, vote);
+                UpdateCommentVote(comment, vote, true);
 
-                await _applicationDbContext.SaveChangesAsync();
+                await _userManager.UpdateAsync(user);
 
                 return VoteResult.Ok(true);
             }
         }
 
-        public void UpdateCommentVote(UserComment articlePartModel, UserComentVoteType vote)
+        public void UpdateCommentVote(UserComment articlePartModel, UserComentVoteType vote, bool isChecked)
         {
             if (vote == UserComentVoteType.Like)
             {
-                articlePartModel.Likes++;
-                articlePartModel.Dislikes--;
+                if (isChecked)
+                {
+                    articlePartModel.Likes++;
+                }
+                else
+                {
+                    articlePartModel.Likes--;
+                }
             }
             else
             {
-                articlePartModel.Likes--;
-                articlePartModel.Dislikes++;
+                if (isChecked)
+                {
+                    articlePartModel.Dislikes++;
+                }
+                else
+                {
+                    articlePartModel.Dislikes--;
+                }
             }
         }
 
@@ -142,11 +160,13 @@ namespace central.Services
 
         public UserCommentVoteInfo? GetUserVote(UserModel user, long id)
         {
+            _applicationDbContext.UserCommentVotes.Load();
             return user.UserCommentVotes.FirstOrDefault(x => x.CommentId == id);
         }
 
         public UserComment? GetComment(long id)
         {
+            _applicationDbContext.UserComments.Load();
             return _applicationDbContext.UserComments.FirstOrDefault(x => x.Id == id);
         }
     }

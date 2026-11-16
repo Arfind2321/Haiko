@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:haiko/base.dart';
 import 'package:haiko/pages/article/article_page.dart';
 import 'package:haiko/pages/article/articles_page.dart';
+import 'package:haiko/pages/auth_page.dart';
+import 'package:haiko/pages/error_page.dart';
 import 'package:haiko/pages/home_page.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -17,6 +19,14 @@ final _router = GoRouter(
     GoRoute(
       path: '/',
       builder: (context, state) => AppBase(child: HomePage()),
+    ),
+    GoRoute(
+      path: '/auth',
+      builder: (context, state) => AppBase(child: AuthPage()),
+    ),
+    GoRoute(
+      path: '/error/:e',
+      builder: (context, state) => AppBase(child: ErrorPage(error: state.pathParameters['id'] ?? "Неизвестная ошибка",)),
     ),
     GoRoute(
       path: '/articles',

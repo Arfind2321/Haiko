@@ -204,7 +204,7 @@ namespace central.Migrations
 
                     b.HasIndex("UserModelId");
 
-                    b.ToTable("ArticlePartCompletionStatus");
+                    b.ToTable("ArticlePartCompletionStatuses");
                 });
 
             modelBuilder.Entity("central.Models.ArticlePartModel", b =>
@@ -222,6 +222,10 @@ namespace central.Migrations
 
                     b.Property<long>("DownVotes")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
                     b.Property<long>("UpVotes")
                         .HasColumnType("INTEGER");
@@ -289,7 +293,7 @@ namespace central.Migrations
 
                     b.HasIndex("UserModelId");
 
-                    b.ToTable("UserCommentVoteInfo");
+                    b.ToTable("UserCommentVotes");
                 });
 
             modelBuilder.Entity("central.Models.Comments.UserVoteInfo", b =>
@@ -311,7 +315,7 @@ namespace central.Migrations
 
                     b.HasIndex("UserModelId");
 
-                    b.ToTable("UserVoteInfo");
+                    b.ToTable("UserVotes");
                 });
 
             modelBuilder.Entity("central.Models.UserModel", b =>

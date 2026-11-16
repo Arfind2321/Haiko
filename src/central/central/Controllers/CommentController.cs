@@ -2,6 +2,7 @@
 using central.Models.ArticleEditing;
 using central.Models.Comments;
 using central.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -9,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace central.Controllers
 {
-    [Route("voting")]
+    [Route("comments")]
     [ApiController]
     public class CommentController : ControllerBase
     {
@@ -25,11 +26,10 @@ namespace central.Controllers
         }
 
         [HttpGet("create")]
-        [Authorize]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> Create([FromQuery] Guid pid, [FromQuery] string content, [FromQuery] long? cid = null)
         {
             if (User.Identity == null) return Unauthorized();
-            if (!User.Identity.IsAuthenticated) return Unauthorized();
             if (string.IsNullOrEmpty(User.Identity.Name)) return Unauthorized();
 
             UserModel? userModel = await _userManager.FindByNameAsync(User.Identity.Name);
@@ -42,11 +42,10 @@ namespace central.Controllers
         }
 
         [HttpGet("remove")]
-        [Authorize]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> Remove([FromQuery] long cid)
         {
             if (User.Identity == null) return Unauthorized();
-            if (!User.Identity.IsAuthenticated) return Unauthorized();
             if (string.IsNullOrEmpty(User.Identity.Name)) return Unauthorized();
 
             UserModel? userModel = await _userManager.FindByNameAsync(User.Identity.Name);
@@ -59,11 +58,10 @@ namespace central.Controllers
         }
 
         [HttpGet("voteUnvote")]
-        [Authorize]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> VoteUnvote([FromQuery]long id, [FromQuery]UserComentVoteType type)
         {
             if (User.Identity == null) return Unauthorized();
-            if (!User.Identity.IsAuthenticated) return Unauthorized();
             if (string.IsNullOrEmpty(User.Identity.Name)) return Unauthorized();
 
             UserModel? userModel = await _userManager.FindByNameAsync(User.Identity.Name);
