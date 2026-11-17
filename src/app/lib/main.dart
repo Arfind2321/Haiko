@@ -16,35 +16,46 @@ void main() {
 final _router = GoRouter(
   initialLocation: '/',
   routes: [
-    GoRoute(
-      path: '/',
-      builder: (context, state) => AppBase(child: HomePage()),
-    ),
-    GoRoute(
-      path: '/auth',
-      builder: (context, state) => AppBase(child: AuthPage()),
-    ),
-    GoRoute(
-      path: '/error/:e',
-      builder: (context, state) => AppBase(child: ErrorPage(error: state.pathParameters['id'] ?? "Неизвестная ошибка",)),
-    ),
-    GoRoute(
-      path: '/articles',
-      builder: (context, state) => AppBase(child: ArticlesPage()),
-    ),
-    GoRoute(
-      path: '/article/:id',
-      builder: (context, state) {
-        String? id = state.pathParameters['id'];
-
-        if (id != null) {
-          return AppBase(child: ArticlePage(articleId: id));
-        }
-        else {
-          return AppBase(child: ArticlesPage());
-        }
+    ShellRoute(
+      builder: (BuildContext context, GoRouterState state, Widget child) {
+        return AppBase(child: child);
       },
-    ),
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) => HomePage(),
+        ),
+        GoRoute(
+          path: '/profile',
+          builder: (context, state) => HomePage(),
+        ),
+        GoRoute(
+          path: '/auth',
+          builder: (context, state) => AuthPage(),
+        ),
+        GoRoute(
+          path: '/error/:e',
+          builder: (context, state) => ErrorPage(error: state.pathParameters['id'] ?? "Неизвестная ошибка",),
+        ),
+        GoRoute(
+          path: '/articles',
+          builder: (context, state) => ArticlesPage(),
+        ),
+        GoRoute(
+          path: '/article/:id',
+          builder: (context, state) {
+            String? id = state.pathParameters['id'];
+
+            if (id != null) {
+              return ArticlePage(articleId: id);
+            }
+            else {
+              return ArticlesPage();
+            }
+          },
+        ),
+      ]
+    )
   ],
   
 );

@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:go_router/go_router.dart';
 import 'package:haiko/models/article_part_model.dart';
+import 'package:haiko/models/user_comment_model.dart';
 import 'package:haiko/models/user_vote_model.dart';
 import 'package:haiko/models/user_vote_model_result.dart';
 import 'package:material_ui/material_ui.dart';
@@ -117,6 +118,74 @@ class ArticlePartRatingWidgetState extends State<ArticlePartRatingWidget> {
 
   }
 
+  final commentController = TextEditingController();
+  
+  Future<String> getUserName(String id) async {
+    try {
+      http.Response resp = await http.get(
+        Uri.parse("http://localhost/api/central/users/get?id=${id}"),
+        headers: {
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (resp.statusCode == 200) {
+        Map<String, dynamic> respContent = jsonDecode(resp.body) as Map<String, dynamic>;
+        return respContent["userName"] ?? "Неизвестный";
+      }
+
+      return "Неизвестный";
+    }
+    catch (ex) {
+      developer.log(ex.toString(), name: 'haiko');
+
+      return "Неизвестный";
+    }
+  }
+
+  Future<bool> sendComment() async {
+    try {
+        http.Response resp = await http.get(
+          Uri.parse("http://localhost/api/central/comments/create?pid=${widget.model.id}&content=${commentController.text}"),
+          headers: {
+            'Authorization': 'Bearer $atoken',
+            'Content-Type': 'application/json; charset=UTF-8',
+            'Accept': 'application/json',
+          },
+        );
+
+        if (resp.statusCode == 200) {
+          if (resp.body == "true") {
+            widget.model.comments.add(UserCommentModel(0, await getUserName("s"), commentController.text, DateTime.now(), 0, 0, []));
+          }
+            
+          return false;
+        }
+        else {
+          return false;
+        }
+    }
+    catch (ex) {
+      developer.log(ex.toString(), name: 'haiko');
+
+      return false;
+    }
+  }
+
+  Map<String, String> idNames = {};
+
+  void pullName(String id) async {
+    if (idNames.containsKey(id)) return;
+
+    String name = await getUserName(id);
+    idNames[id] = name;
+
+    setState(() {
+      
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -193,10 +262,9 @@ class ArticlePartRatingWidgetState extends State<ArticlePartRatingWidget> {
               ],
             ),
           ),
-          if (widget.show)
           Container(
             decoration: BoxDecoration(
-                color: Color.fromARGB(255, 117, 114, 114),
+                color: Color.fromARGB(255, 20, 22, 20),
                 borderRadius: 
                 widget.show ? BorderRadius.only(bottomRight: Radius.circular(20), bottomLeft: Radius.circular(20)) 
                 : BorderRadius.circular(20),
@@ -205,12 +273,38 @@ class ArticlePartRatingWidgetState extends State<ArticlePartRatingWidget> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SelectableText(widget.model.content, style: TextStyle(
-                    fontSize: 20
-                  )
+                Row(
+                  children: [
+                    Expanded(child: TextField(controller: commentController)),
+                    TextButton(onPressed: sendComment, child: Text("Отправить"))
+                  ],
                 ),
-                
-                
+                ListView.builder(scrollDirection: Axis.vertical, shrinkWrap: true, itemCount: widget.model.comments.length, itemBuilder: (context, index) {
+                  developer.log("hi");
+                  UserCommentModel cmodel = widget.model.comments[index];
+                  pullName(cmodel.userId);
+                  
+                  return Container(
+                    decoration: BoxDecoration(
+                      color: Color.fromARGB(255, 83, 81, 81),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    //margin: EdgeInsets.all(10),
+                    padding: EdgeInsets.all(5),
+                    height: 50,
+                    child: Row(
+                      spacing: 10,
+                      children: [
+                        SizedBox( 
+                          width: 50,
+                          height: 50,
+                          child: Icon(Icons.comment),
+                        ),
+                        SelectableText("${idNames[cmodel.userId] ?? "Неизвестный"}: ${cmodel.content}")
+                      ],
+                    ),
+                  );
+                })
               ],
             )
           )

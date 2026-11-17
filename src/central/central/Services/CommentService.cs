@@ -33,8 +33,6 @@ namespace central.Services
                 return false;
             }
 
-            _applicationDbContext.UserComments.Add(userComment);
-
             if (commentID == null)
             {
                 articlePartModel.Comments.Add(userComment);
@@ -50,6 +48,8 @@ namespace central.Services
 
                 answeringTo.Answers.Add(userComment);
             }
+
+            _applicationDbContext.UserComments.Add(userComment);
 
             await _applicationDbContext.SaveChangesAsync();
 

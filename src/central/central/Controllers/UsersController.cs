@@ -33,7 +33,7 @@ namespace central.Controllers
                 return NotFound();
             }
 
-            return Ok(new MeResponse
+            return Ok(new
             {
                 Id = user.Id,
                 UserName = user.UserName

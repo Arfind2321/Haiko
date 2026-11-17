@@ -173,34 +173,41 @@ namespace central.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> UserInfo()
         {
-            if (!User.Identity.IsAuthenticated)
-            {
-                return Unauthorized();
-            }
+            if (User.Identity == null) return Unauthorized();
+            if (string.IsNullOrEmpty(User.Identity.Name)) return Unauthorized();
 
-            var userName = User.FindFirst(ClaimTypes.Name)?.Value;
-            if (string.IsNullOrEmpty(userName)) return Unauthorized();
-
-            var user = await _userManager.FindByNameAsync(userName);
+            var user = await _userManager.FindByNameAsync(User.Identity.Name);
 
             if (user == null)
             {
                 return Unauthorized();
             }
 
-            return Ok(new MeResponse
+            return Ok(new
             {
                 Id = user.Id,
-                UserName = user.UserName,
-                Articles = user.Articles
+                UserName = user.UserName
             });
         }
 
-        public class MeResponse
+        [HttpGet("getArticles")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<IActionResult> GetArticles()
         {
-            public Guid Id { get; set; }
-            public string UserName { get; set; }
-            public List<ArticleModel> Articles { get; set; }
+            if (User.Identity == null) return Unauthorized();
+            if (string.IsNullOrEmpty(User.Identity.Name)) return Unauthorized();
+
+            var user = await _userManager.FindByNameAsync(User.Identity.Name);
+
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            return Ok(new
+            {
+                Articles = user.Articles
+            });
         }
     }
 }

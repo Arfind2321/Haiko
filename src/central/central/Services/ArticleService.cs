@@ -190,11 +190,11 @@ namespace central.Services
 
         public ArticlePartModel? GetPartById(Guid id)
         {
+            _applicationDbContext.UserComments.Load();
+
             ArticlePartModel? model = _applicationDbContext.ArticleParts.Where(x => x.Id == id).FirstOrDefault();
 
             if (model == null) return null;
-
-            _applicationDbContext.UserComments.Load();
 
             return model;
         }

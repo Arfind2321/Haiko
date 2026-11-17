@@ -51,7 +51,7 @@ class ArticlePartWidgetState extends State<ArticlePartWidget> {
         if (resp.body != '"non"') {
           voteModel = UserVoteModel.fromJson(jsonDecode(resp.body) as Map<String, Object?>);
         }
-        
+
         return true;
       }
       else {
@@ -85,9 +85,7 @@ class ArticlePartWidgetState extends State<ArticlePartWidget> {
     }
   }
 
-  void complete() async {
-    
-  }
+
 
   @override
   Widget build(BuildContext context) {

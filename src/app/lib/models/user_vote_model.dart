@@ -10,7 +10,7 @@ class UserVoteModel
       return UserVoteModel(
         json['id'] as int,
         json['articlePartId'] as String,
-        json['type'] == "0" ? UserVoteType.up : UserVoteType.down,
+        json['type'] == 0 ? UserVoteType.up : UserVoteType.down,
       );
     }
 }

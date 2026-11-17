@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:go_router/go_router.dart';
 import 'package:haiko/models/article_model.dart';
-import 'package:haiko/pages/error_page.dart';
 import 'package:haiko/widgets/article_part_widget.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:http/http.dart' as http;
@@ -60,7 +59,7 @@ class ArticlePageState extends State<ArticlePage> {
 
       if (resp.statusCode == 200) {
         Map<String, dynamic> respContent = jsonDecode(resp.body) as Map<String, dynamic>;
-        writerName = respContent["name"] ?? "Неизвестный писатель";
+        writerName = respContent["userName"] ?? "Неизвестный писатель";
       }
     }
     catch (ex) {
@@ -193,10 +192,12 @@ class ArticlePageState extends State<ArticlePage> {
 
     completedParts = await getArticleCompletion();
 
+    model = articleModel;
+
     await getWriter();
 
     setState(() {
-      model = articleModel;
+      
       generateParts();
     });
   }
@@ -211,16 +212,16 @@ class ArticlePageState extends State<ArticlePage> {
   }
 
   void generateParts() {
-    List<ArticlePartWidget> _parts = [];
+    List<ArticlePartWidget> partsTemp = [];
 
     bool stopShowing = false;
-    model!.contents.forEach((model) {
+    for (var model in model!.contents) {
       if (completedParts.contains(model.id)) {
-        _parts.add(ArticlePartWidget(model: model, completed: true, show: false, available: true, callback: (a,b) => setArticleCompletion(a, b)));
+        partsTemp.add(ArticlePartWidget(model: model, completed: true, show: false, available: true, callback: (a,b) => setArticleCompletion(a, b)));
       }
       else {
         ArticlePartWidget apw = ArticlePartWidget(model: model, completed: false, available: stopShowing ? false : true, show: stopShowing ? false : true, callback: (a,b) => setArticleCompletion(a, b));
-        _parts.add(apw);
+        partsTemp.add(apw);
         if (!stopShowing) {
           //Scrollable.ensureVisible(apw.dataKey.currentContext!);
         }
@@ -228,10 +229,10 @@ class ArticlePageState extends State<ArticlePage> {
       }
 
       developer.log("added part ${model.id} ${model.content}", name: 'haiko');
-    });
+    }
 
     setState(() {
-      parts = _parts;
+      parts = partsTemp;
     });
   }
 
@@ -305,30 +306,31 @@ class ArticlePageState extends State<ArticlePage> {
   @override
   Widget build(BuildContext context) {
     if (model != null) {
-      
-      return Column(
-        spacing: 5,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-              SelectableText(
-                model!.title,
-                style: TextStyle(fontSize: 72),
-              ),
-              Row(
-                children: [
-                  Text("Последнее изменение: ${model!.lastEditTime.toString()}"),
-                  Text(" - "),
-                  Text("Написал: $writerName")
-                ],
-              ),
-              TextButton(onPressed: () async {
-                  await clearArticleCompletion();
-              }, child: Text("Сбросить")),
-              Column(
-                spacing: 5,
-                children: parts,
-              )
-        ],
+      return SingleChildScrollView(
+        child: Column(
+          spacing: 5,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+                SelectableText(
+                  model!.title,
+                  style: TextStyle(fontSize: 72),
+                ),
+                Row(
+                  children: [
+                    Text("Последнее изменение: ${model!.lastEditTime.toString()}"),
+                    Text(" - "),
+                    Text("Написал: $writerName")
+                  ],
+                ),
+                TextButton(onPressed: () async {
+                    await clearArticleCompletion();
+                }, child: Text("Сбросить")),
+                Column(
+                  spacing: 10,
+                  children: parts,
+                )
+          ],
+        ),
       );
     }
     else {
