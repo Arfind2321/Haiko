@@ -1,20 +1,39 @@
-import os
-from gensim.models import Word2Vec
 
-# Определяем количество ядер вашего процессора (на MacBook обычно 8-12)
-num_workers = os.cpu_count() or 4
+from txtai import Embeddings
+import sqlite3
 
-model = Word2Vec(
-    corpus_file="clean_taiga.txt",  # Читаем напрямую с диска в многопоточном режиме
-    vector_size=300,
-    window=5,
-    min_count=5,
-    workers=num_workers,
-    sg=1,
-    epochs=5  # Теперь можно безопасно поставить 5 эпох, это пройдет очень быстро
+'''
+# 1. Инициализируем поиск с готовой мультиязычной моделью
+embeddings = Embeddings(
+    path="intfloat/multilingual-e5-small", content=True
 )
 
-model.save("taiga_word2vec.model")
 
-# Проверка качества эмбеддингов
-print(model.wv.most_similar("python", topn=5))
+docs = [
+    {"text": "Текст первого документа", "ArticleId": '1'},
+    {"text": "Текст второго документа", "ArticleId": '1'},
+]
+
+# 3. Индексируем и сохраняем в локальную папку
+embeddings.index(docs)
+embeddings.save("my_search_index")
+
+# 4. Ищем по смыслу (даже без совпадения слов)
+results = embeddings.search("надо лечится", limit=2)
+print(results)
+'''
+
+
+embeddings = Embeddings()
+embeddings.load("my_search_index")
+embeddings.save("my_search_index")
+print(embeddings.search("SELECT text, ArticleId, id FROM txtai", limit=10000))
+
+parts = embeddings.search("select id, text, PartId from txtai where ArticleId = '1'", limit=10000)
+print(parts)
+parts_ids = [int(part['id']) for part in parts]
+#print(parts_ids)
+
+answer = embeddings.search("grpc", limit=1)
+
+print(embeddings.search(f"select ArticleId from txtai where id = '{answer[0]['id']}'", limit=10000))

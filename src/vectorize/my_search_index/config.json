@@ -1,0 +1,19 @@
+{
+  "path": "intfloat/multilingual-e5-small",
+  "content": true,
+  "autoid": 12,
+  "dimensions": 384,
+  "backend": "faiss",
+  "offset": 14,
+  "build": {
+    "create": "2026-11-19T17:44:55Z",
+    "python": "3.13.1",
+    "settings": {
+      "components": "IDMap,Flat"
+    },
+    "system": "Darwin (arm64)",
+    "txtai": "9.14.0"
+  },
+  "update": "2026-11-19T19:45:22Z",
+  "format": "json"
+}

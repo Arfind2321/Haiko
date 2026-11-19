@@ -1,0 +1,7 @@
+fastapi==0.165.0
+grpcio==1.85.1
+protobuf==7.36.2
+txtai-minimal==9.14.0
+uvicorn
+faiss-cpu
+torch
