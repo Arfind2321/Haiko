@@ -27,13 +27,13 @@ print(results)
 embeddings = Embeddings()
 embeddings.load("my_search_index")
 embeddings.save("my_search_index")
-print(embeddings.search("SELECT text, ArticleId, id FROM txtai", limit=10000))
+#print(embeddings.search("SELECT text, ArticleId, id FROM txtai", limit=10000))
 
-parts = embeddings.search("select id, text, PartId from txtai where ArticleId = '1'", limit=10000)
+parts = embeddings.search("select id, text, PartId from txtai where ArticleId = '6'", limit=10000)
 print(parts)
 parts_ids = [int(part['id']) for part in parts]
 #print(parts_ids)
 
-answer = embeddings.search("grpc", limit=1)
-
-print(embeddings.search(f"select ArticleId from txtai where id = '{answer[0]['id']}'", limit=10000))
+answer = embeddings.search("assembler", limit=1)
+print(answer)
+#print(embeddings.search(f"select ArticleId from txtai where id = '{answer[0]['id']}'", limit=10000))

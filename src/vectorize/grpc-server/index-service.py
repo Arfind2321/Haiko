@@ -22,7 +22,7 @@ class Cursor:
                 self.embeddings.save("my_search_index")
         else:
             self.embeddings.upsert([{"id": emb_ids[0], "text": title, "ArticleId": id}])
-
+            self.embeddings.save("my_search_index")
             for i, part in enumerate(parts):
                 if i + 1 < len(emb_ids):
                     self.embeddings.upsert([{"id": emb_ids[i + 1], "text": part.Content, "ArticleId": id,"PartId": part.Id, "Title": part.Title}])
