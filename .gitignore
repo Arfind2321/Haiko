@@ -356,3 +356,13 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+.DS_Store
+.DS_Store?
+
+
+<<<<<<< HEAD
+model.py
+=======
+model.py
+>>>>>>> eb7db41 (aaa)
