@@ -360,7 +360,5 @@ FodyWeavers.xsd
 .DS_Store
 .DS_Store?
 
-clean_taiga.txt
-taiga_word2vec.model.syn1neg.npy
-taiga_word2vec.model.wv.vectors.npy
+
 model.py
