@@ -1,21 +1,21 @@
-# Базовый образ
-FROM python:3.11-slim
-
-# Установка рабочей директории
+# --- Этап 1: Общий фундамент (собирается и хранится на диске 1 раз) ---
+FROM python:3.12-slim AS base
 WORKDIR /app
-
-# Копирование файла зависимостей и их установка
 COPY requirements.txt .
-
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Копирование исходного кода приложения
-COPY . .
+# --- Этап 2: Сборка для первого сервиса ---
+FROM base AS grpc_server
+COPY requirements-grpc.txt .
+RUN pip install --no-cache-dir -r requirements-grpc.txt
+COPY ./grpc-server .
+EXPOSE 50051
+CMD ["python3", "index-service.py"]
 
-# Открытие порта (если требуется)
+# --- Этап 3: Сборка для второго сервиса ---
+FROM base AS http_api
+COPY requirements-api.txt .
+RUN pip install --no-cache-dir -r requirements-api.txt
+COPY ./http-api .
 EXPOSE 8080
-EXPOSE 8000
-
-
-CMD ["python", "index-service.py"]
-CMD ["python3", "-m", "uvicorn", "search-service:app", "--port", "8000", "--reload"]
+CMD ["uvicorn", "search-service:app", "--host", "0.0.0.0", "--port", "8080"]

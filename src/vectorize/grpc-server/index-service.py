@@ -4,14 +4,15 @@ from concurrent import futures
 import grpc
 import editinginvoke_pb2
 import editinginvoke_pb2_grpc
+import sqlite3, os
   
         
 class Cursor:
     def __init__(self):
         self.embeddings = Embeddings(content=True)
-        self.embeddings.load("my_search_index")
 
     def change_document(self, id, title, parts):
+        self.embeddings.load("my_search_index")
         emb_ids = [part['id'] for part in self.embeddings.search(f"select id from txtai where ArticleId = '{id}'", limit=10000)]
         emb_ids.sort()
         if emb_ids == []:
@@ -33,6 +34,7 @@ class Cursor:
 
             self.embeddings.save("my_search_index")
     def delete_document(self, id):
+        self.embeddings.load("my_search_index")
         emb_ids = [part['id'] for part in self.embeddings.search(f"select id from txtai where ArticleId = '{id}'", limit=10000)]
         if emb_ids != []:
             self.embeddings.delete(emb_ids)
@@ -67,10 +69,15 @@ def start_server():
         SearcherDatabase(), server
     )
 
-    server.add_insecure_port(f"[::]:8080")
+    server.add_insecure_port('0.0.0.0:50051')
     server.start()
     server.wait_for_termination()
 
 if __name__ == "__main__":
+    db_path = "/app/my_search_index/documents"
+    if os.path.exists(db_path):
+        with sqlite3.connect(db_path) as conn:
+            conn.execute("PRAGMA journal_mode=WAL;")
+            conn.execute("PRAGMA synchronous=NORMAL;")
     cursor = Cursor()
     start_server()

@@ -1,0 +1,23 @@
+services:
+  grpc_server:
+    build:
+      context: .
+      target: grpc_server
+    ports:
+      - "50051:50051"
+    volumes:
+      - ./my_search_index:/app/my_search_index  
+    restart: unless-stopped
+
+  http_api:
+    build:
+      context: .
+      target: http_api
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./my_search_index:/app/my_search_index  # тот же том для чтения данных
+    depends_on:
+      - grpc_server
+    restart: unless-stopped
+
