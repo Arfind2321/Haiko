@@ -2,6 +2,7 @@
 FROM python:3.12-slim AS base
 WORKDIR /app
 COPY requirements.txt .
+COPY ./multilingual-e5-small .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # --- Этап 2: Сборка для первого сервиса ---

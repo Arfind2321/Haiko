@@ -1,11 +1,15 @@
 
 from txtai import Embeddings
 import sqlite3
+import os
 
-'''
+os.environ["HF_HUB_OFFLINE"] = "1"
+
 # 1. Инициализируем поиск с готовой мультиязычной моделью
 embeddings = Embeddings(
-    path="intfloat/multilingual-e5-small", content=True
+    path="./multilingual-e5-small",
+    content=True,  # Обязательно для корректной работы upsert и обновлений
+    instructions={"query": "query: ", "data": "passage: "}
 )
 
 
@@ -21,9 +25,9 @@ embeddings.save("my_search_index")
 # 4. Ищем по смыслу (даже без совпадения слов)
 results = embeddings.search("надо лечится", limit=2)
 print(results)
+
+
 '''
-
-
 embeddings = Embeddings()
 embeddings.load("my_search_index")
 embeddings.save("my_search_index")
@@ -37,3 +41,4 @@ parts_ids = [int(part['id']) for part in parts]
 answer = embeddings.search("assembler", limit=1)
 print(answer)
 #print(embeddings.search(f"select ArticleId from txtai where id = '{answer[0]['id']}'", limit=10000))
+'''
