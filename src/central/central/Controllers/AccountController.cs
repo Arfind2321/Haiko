@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -21,15 +22,17 @@ namespace central.Controllers
     [ApiController]
     public class AccountController : ControllerBase
     {
+        private readonly ApplicationDbContext _applicationDbContext;
         private readonly UserManager<UserModel> _userManager;
         private readonly SignInManager<UserModel> _signInManager;
         private readonly IConfiguration _configuration;
 
-        public AccountController(UserManager<UserModel> userManager, SignInManager<UserModel> signInManager, IConfiguration configuration)
+        public AccountController(UserManager<UserModel> userManager, SignInManager<UserModel> signInManager, IConfiguration configuration, ApplicationDbContext applicationDbContext)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _configuration = configuration;
+            _applicationDbContext = applicationDbContext;
         }
 
         private async Task<string> GenerateJwtToken(UserModel user)
@@ -204,9 +207,18 @@ namespace central.Controllers
                 return Unauthorized();
             }
 
+            _applicationDbContext.Articles.Load();
+
+            List<MinimalArticleModel> minimalArticleModels = [];
+
+            foreach (var item in user.Articles)
+            {
+                minimalArticleModels.Add(new() { id = item.Id, Title = item.Title });
+            }
+
             return Ok(new
             {
-                Articles = user.Articles
+                Articles = minimalArticleModels
             });
         }
     }

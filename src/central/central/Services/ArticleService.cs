@@ -1,7 +1,9 @@
 ﻿using central.Models;
 using central.Models.ArticleEditing;
 using Haiko.Protobuf;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace central.Services
 {
@@ -9,10 +11,14 @@ namespace central.Services
     {
         private readonly ApplicationDbContext _applicationDbContext;
         private readonly SearcherDatabase.SearcherDatabaseClient _searcherDatabaseClient;
-        public ArticleService(ApplicationDbContext applicationDbContext, SearcherDatabase.SearcherDatabaseClient searcherDatabaseClient)
+        private readonly UserManager<UserModel> _userManager;
+        private readonly ILogger<ArticleService> _logger;
+        public ArticleService(ApplicationDbContext applicationDbContext, SearcherDatabase.SearcherDatabaseClient searcherDatabaseClient, UserManager<UserModel> userManager, ILogger<ArticleService> logger)
         {
             _applicationDbContext = applicationDbContext;
             _searcherDatabaseClient = searcherDatabaseClient;
+            _userManager = userManager;
+            _logger = logger;
         }
 
         public async Task<ArticleEditingResult> CreateOrEditArticle(UserModel user, ArticleEditingRequest request)
@@ -20,7 +26,7 @@ namespace central.Services
             ArticleModel articleModel = new();
             if (!request.IsNew)
             {
-                ArticleModel? am = GetById(request.ArticleId.Value, user);
+                ArticleModel? am = GetById(Guid.Parse(request.ArticleId), user);
 
                 if (am == null)
                 {
@@ -38,13 +44,13 @@ namespace central.Services
 
             foreach (ArticlePartEditingModel articlePartEditingModel in request.Parts)
             {
-                if (articlePartEditingModel.Id == null)
+                if (string.IsNullOrEmpty(articlePartEditingModel.Id) || articlePartEditingModel.Id == "0")
                 {
-                    articleModel.Contents.Add(CreatePart(articlePartEditingModel.Content));
+                    articleModel.Contents.Add(CreatePart(articlePartEditingModel.Title, articlePartEditingModel.Content));
                 }
                 else
                 {
-                    ArticlePartModel? articlePartModel = GetPartById(articlePartEditingModel.Id.Value);
+                    ArticlePartModel? articlePartModel = GetPartById(Guid.Parse(articlePartEditingModel.Id));
 
                     if (articlePartModel != null)
                     {
@@ -62,9 +68,10 @@ namespace central.Services
                 _applicationDbContext.Articles.Add(articleModel);
                 user.Articles.Add(articleModel);
             }
-
+            
             await _applicationDbContext.SaveChangesAsync();
-
+            await _userManager.UpdateAsync(user);
+            
             //StatusResponse status = await UpdateArticle(articleModel);
 
             if (true)//status.IsOK)
@@ -124,7 +131,7 @@ namespace central.Services
 
             foreach (var content in articleModel.Contents)
             {
-                newModel.Contents.Add(CreatePart(content.Content, false));   
+                newModel.Contents.Add(CreatePart(content.Title, content.Content, false));   
             }
 
             newModel.Tags.AddRange(articleModel.Tags);
@@ -139,20 +146,24 @@ namespace central.Services
 
         public ArticleModel? GetById(Guid id)
         {
+            _applicationDbContext.UserComments.Load();
+            _applicationDbContext.ArticleParts.Load();
+            _applicationDbContext.Articles.Load();
+
             ArticleModel? model = _applicationDbContext.Articles.Where(x => x.Id == id).FirstOrDefault();
             if (model == null) return null;
-
-            _applicationDbContext.ArticleParts.Load();
 
             return model;
         }
 
         public ArticleModel? GetById(Guid id, UserModel user)
         {
+            _applicationDbContext.UserComments.Load();
+            _applicationDbContext.ArticleParts.Load();
+            _applicationDbContext.Articles.Load();
+
             ArticleModel? model = user.Articles.FirstOrDefault(x => x.Id == id);
             if (model == null) return null;
-
-            _applicationDbContext.ArticleParts.Load();
 
             return model;
         }
@@ -171,10 +182,11 @@ namespace central.Services
             return ArticleEditingResult.Ok(id);
         }
 
-        public ArticlePartModel CreatePart(string content, bool autosave = true)
+        public ArticlePartModel CreatePart(string title, string content, bool autosave = true)
         {
             ArticlePartModel articlePartModel = new()
             {
+                Title = title,
                 Content = content
             };
 
@@ -190,9 +202,9 @@ namespace central.Services
 
         public ArticlePartModel? GetPartById(Guid id)
         {
-            _applicationDbContext.UserComments.Load();
+            //_applicationDbContext.UserComments.Load();
 
-            ArticlePartModel? model = _applicationDbContext.ArticleParts.Where(x => x.Id == id).FirstOrDefault();
+            ArticlePartModel? model = _applicationDbContext.ArticleParts.Include(x => x.Comments).Where(x => x.Id == id).FirstOrDefault();
 
             if (model == null) return null;
 

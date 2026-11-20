@@ -27,4 +27,16 @@ class ArticleModel
         json['forkedFrom'] != null ? ArticleModel.fromJson(json['forkedFrom'] as Map<String, Object?>) : null
       );
     }
+
+    Map<String, dynamic> toJson() => {
+      'id': id,
+      'writerID': writerID,
+      'title': title,
+      'tags': tags,
+      'creationTime': creationTime.toString(),
+      'lastEditTime': lastEditTime.toString(),
+      'contents': contents,
+      'isForked': isForked,
+      'forkedFrom': forkedFrom,
+    };
 }

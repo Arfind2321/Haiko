@@ -22,4 +22,13 @@ class ArticlePartModel
       (json['comments'] as List<dynamic>).map((data) => UserCommentModel.fromJson(data)).toList()
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'title': title,
+    'content': content,
+    'upVotes': upVotes,
+    'downVotes': downVotes,
+    'comments': comments
+  };
 }
