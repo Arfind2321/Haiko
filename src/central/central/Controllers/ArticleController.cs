@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using central.Models;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 
 namespace central.Controllers
 {
@@ -15,19 +16,23 @@ namespace central.Controllers
     [ApiController]
     public class ArticleController : ControllerBase
     {
+        private readonly ApplicationDbContext _applicationDbContext;
         private readonly ArticleService _articleService;
         private readonly UserManager<UserModel> _userManager;
+        private readonly ILogger<ArticleController> _logger;
         private readonly SignInManager<UserModel> _signInManager;
         private readonly IConfiguration _configuration;
         private readonly ArticleCompletionService _articleCompletionService;
 
-        public ArticleController(ArticleService articleService, UserManager<UserModel> userManager, SignInManager<UserModel> signInManager, IConfiguration configuration, ArticleCompletionService articleCompletionService)
+        public ArticleController(ArticleService articleService, UserManager<UserModel> userManager, SignInManager<UserModel> signInManager, IConfiguration configuration, ArticleCompletionService articleCompletionService, ILogger<ArticleController> logger, ApplicationDbContext applicationDbContext)
         {
             _articleService = articleService;
             _userManager = userManager;
             _signInManager = signInManager;
             _configuration = configuration;
             _articleCompletionService = articleCompletionService;
+            _logger = logger;
+            _applicationDbContext = applicationDbContext;
         }
 
         [HttpGet("tc")]
@@ -91,6 +96,20 @@ namespace central.Controllers
 
             if (userModel == null) return Unauthorized();
 
+            _applicationDbContext.Articles.Load();
+
+            ArticleModel? articleModel = _articleService.GetById(id);
+
+            if (articleModel == null)
+            {
+                return NotFound();
+            }
+
+            if (!userModel.Articles.Contains(articleModel))
+            {
+                return Forbid();
+            }
+
             ArticleEditingResult result = await _articleService.RemoveById(userModel, id);
 
             return Ok(result);
@@ -121,8 +140,6 @@ namespace central.Controllers
             {
                 return NotFound();
             }
-
-            Console.WriteLine(articleModel.Contents[0]);
 
             return Ok(articleModel);
         }

@@ -4,6 +4,7 @@ import 'package:haiko/models/article_part_model.dart';
 import 'package:haiko/models/user_vote_model.dart';
 import 'package:haiko/widgets/article_part_rating_widget.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:haiko/api/server_api.dart';
 import 'dart:developer' as developer;
 
 import 'package:http/http.dart' as http;
@@ -12,13 +13,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 //ignore: must_be_immutable
 class ArticlePartWidget extends StatefulWidget  {
   final dataKey = GlobalKey();
-  ArticlePartWidget({super.key, required this.model, required this.completed, required this.available, required this.show, required this.callback});
+  ArticlePartWidget({super.key, required this.isLocal, required this.model, required this.completed, required this.available, required this.show, required this.callback
+  ,required this.idNames, required this.pullName});
 
   final ArticlePartModel model;
   bool show;
   bool available;
   bool completed;
+  bool isLocal;
   final Function(String, bool) callback;
+  Map<String, String> idNames;
+  final Function(String) pullName;
 
   @override
   State<StatefulWidget> createState() => ArticlePartWidgetState();
@@ -39,7 +44,7 @@ class ArticlePartWidgetState extends State<ArticlePartWidget> {
   Future<bool> getUserVote() async {
     try {
       http.Response resp = await http.get(
-        Uri.parse("http://localhost/api/central/voting/get?id=${widget.model.id}"),
+        Uri.parse("${ServerApi.serverUrl}/api/central/voting/get?id=${widget.model.id}"),
         headers: {
           'Authorization': 'Bearer $atoken',
           'Content-Type': 'application/json; charset=UTF-8',
@@ -84,7 +89,6 @@ class ArticlePartWidgetState extends State<ArticlePartWidget> {
       });
     }
   }
-
 
 
   @override
@@ -133,6 +137,7 @@ class ArticlePartWidgetState extends State<ArticlePartWidget> {
           ),
           if (widget.show)
           Container(
+            
             decoration: BoxDecoration(
                 color: Color.fromARGB(255, 117, 114, 114),
                 borderRadius: 
@@ -155,7 +160,7 @@ class ArticlePartWidgetState extends State<ArticlePartWidget> {
                   }, 
                   child: Text("Завершить")
                 ),
-                ArticlePartRatingWidget(model: widget.model, available: widget.available, show: true, voteModel: voteModel)
+                if (!widget.isLocal) ArticlePartRatingWidget(model: widget.model, available: widget.available, show: widget.show, voteModel: voteModel, idNames: widget.idNames, pullName: (p) => widget.pullName(p),)
               ],
             )
           )

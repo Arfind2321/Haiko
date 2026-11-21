@@ -1,9 +1,12 @@
 import 'dart:convert';
 
 import 'package:go_router/go_router.dart';
+import 'package:haiko/api/server_api.dart';
+import 'package:haiko/controllers/app_bar_auth_state_controller.dart';
 import 'package:material_ui/material_ui.dart';
 import 'dart:developer' as developer;
 
+import 'package:universal_html/html.dart' as html;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -34,6 +37,7 @@ class AuthPageState extends State<AuthPage> {
 
     if (token != null) {
       setState(() {
+        AppBarAuthController.of(context).updateAppBar(authState: true, userName: prefs.getString("userName"), id: prefs.getString("id"));
         GoRouter.of(context).replace("/");
       });
     }
@@ -42,7 +46,7 @@ class AuthPageState extends State<AuthPage> {
   void login() async {
     try {
       http.Response resp = await http.post(
-        Uri.parse("http://localhost/api/central/auth/login"),
+        Uri.parse("${ServerApi.serverUrl}/api/central/auth/login"),
         headers: {
           'Content-Type': 'application/json; charset=UTF-8',
           'Accept': 'application/json',
@@ -63,8 +67,12 @@ class AuthPageState extends State<AuthPage> {
             GoRouter.of(context).pop();
           }
           else {
-            GoRouter.of(context).replace("/");
+            GoRouter.of(context).replace("/profile");
           }
+
+          setState(() {
+            AppBarAuthController.of(context).updateAppBar(authState: true, userName: loginController.text, id: "");
+          });
         });
       }
       else {
@@ -103,7 +111,7 @@ class AuthPageState extends State<AuthPage> {
   void register() async {
     try {
       http.Response resp = await http.post(
-        Uri.parse("http://localhost/api/central/auth/register"),
+        Uri.parse("${ServerApi.serverUrl}/api/central/auth/register"),
         headers: {
           'Content-Type': 'application/json; charset=UTF-8',
           'Accept': 'application/json',
@@ -117,14 +125,16 @@ class AuthPageState extends State<AuthPage> {
       if (resp.statusCode == 200) {
         SharedPreferences prefs = await SharedPreferences.getInstance();
 
-        prefs.setString("token", resp.body.replaceAll(RegExp('"'), ""));
+        String token = resp.body.replaceAll(RegExp('"'), "");
+
+        prefs.setString("token", token);
 
         setState(() {
           if (GoRouter.of(context).canPop()) {
-            GoRouter.of(context).pop();
+            GoRouter.of(context).pop(token);
           }
           else {
-            GoRouter.of(context).replace("/");
+            GoRouter.of(context).replace("/profile");
           }
         });
       }
@@ -163,51 +173,53 @@ class AuthPageState extends State<AuthPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        children: [
-          Image(image: AssetImage("assets/logo-white-cat-only-sized.png")),
-          Container(
-            margin: EdgeInsets.all(20),
-            padding: EdgeInsets.all(30),
-            decoration: BoxDecoration(
-              color: Color.fromARGB(255, 117, 114, 114),
-              borderRadius: BorderRadius.circular(20) 
-            ),
-            child: Column(
-              children: [
-                Text("Вход в аккаунт", style: TextStyle(fontSize: 72)),
-                Column(
-                  spacing: 10,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text("Логин:"),
-                    TextField(
-                      controller: loginController,
-                    ),
-                    Text("Пароль:"),
-                    TextField(
-                      controller: passwordController,
-                      obscureText: true,
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        TextButton(
-                          onPressed: login, child: Text("Войти")
-                        ),
-                        TextButton(
-                          onPressed: register, child: Text("Зарегистрироваться")
-                        )
-                      ],
-                    )
-                  ],
-                )
-              ],
-            ),
-          )
-        ],
-      ),  
+    return SingleChildScrollView(
+      child: Center(
+        child: Column(
+          children: [
+            Image(image: AssetImage("assets/logo-white-cat-only-sized.png")),
+            Container(
+              margin: EdgeInsets.all(20),
+              padding: EdgeInsets.all(30),
+              decoration: BoxDecoration(
+                color: Color.fromARGB(255, 117, 114, 114),
+                borderRadius: BorderRadius.circular(20) 
+              ),
+              child: Column(
+                children: [
+                  Text("Вход в аккаунт", style: TextStyle(fontSize: 72)),
+                  Column(
+                    spacing: 10,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text("Логин:"),
+                      TextField(
+                        controller: loginController,
+                      ),
+                      Text("Пароль:"),
+                      TextField(
+                        controller: passwordController,
+                        obscureText: true,
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          TextButton(
+                            onPressed: login, child: Text("Войти")
+                          ),
+                          TextButton(
+                            onPressed: register, child: Text("Зарегистрироваться")
+                          )
+                        ],
+                      )
+                    ],
+                  )
+                ],
+              ),
+            )
+          ],
+        ),  
+      ),
     );
   }
 }

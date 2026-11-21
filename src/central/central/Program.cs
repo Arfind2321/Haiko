@@ -25,7 +25,7 @@ public static class Program
 
         builder.Services.AddDbContext<ApplicationDbContext>(o =>
         {
-            o.UseSqlite("Data Source=app.db");
+            o.UseSqlite("Data Source=/db/app.db");
         });
 
         builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

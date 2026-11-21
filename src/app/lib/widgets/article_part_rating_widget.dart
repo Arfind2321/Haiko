@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:go_router/go_router.dart';
+import 'package:haiko/api/server_api.dart';
 import 'package:haiko/models/article_part_model.dart';
 import 'package:haiko/models/user_comment_model.dart';
 import 'package:haiko/models/user_vote_model.dart';
@@ -14,12 +15,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 //ignore: must_be_immutable
 class ArticlePartRatingWidget extends StatefulWidget  {
   final dataKey = GlobalKey();
-  ArticlePartRatingWidget({super.key, required this.model, required this.available, required this.show, required this.voteModel});
+  ArticlePartRatingWidget({super.key, required this.model, required this.available, required this.show, required this.voteModel, required this.idNames, required this.pullName});
 
   final ArticlePartModel model;
   bool show;
   UserVoteModel? voteModel;
   bool available;
+  Map<String, String> idNames;
+  final Function(String) pullName;
 
   @override
   State<StatefulWidget> createState() => ArticlePartRatingWidgetState();
@@ -63,7 +66,7 @@ class ArticlePartRatingWidgetState extends State<ArticlePartRatingWidget> {
     else {
       try {
         http.Response resp = await http.get(
-          Uri.parse("http://localhost/api/central/voting/voteUnvote?id=${widget.model.id}&type=${type == UserVoteType.up ? 0 : 1}"),
+          Uri.parse("${ServerApi.serverUrl}/api/central/voting/voteUnvote?id=${widget.model.id}&type=${type == UserVoteType.up ? 0 : 1}"),
           headers: {
             'Authorization': 'Bearer $atoken',
             'Content-Type': 'application/json; charset=UTF-8',
@@ -119,35 +122,11 @@ class ArticlePartRatingWidgetState extends State<ArticlePartRatingWidget> {
   }
 
   final commentController = TextEditingController();
-  
-  Future<String> getUserName(String id) async {
-    try {
-      http.Response resp = await http.get(
-        Uri.parse("http://localhost/api/central/users/get?id=${id}"),
-        headers: {
-          'Content-Type': 'application/json; charset=UTF-8',
-          'Accept': 'application/json',
-        },
-      );
-
-      if (resp.statusCode == 200) {
-        Map<String, dynamic> respContent = jsonDecode(resp.body) as Map<String, dynamic>;
-        return respContent["userName"] ?? "Неизвестный";
-      }
-
-      return "Неизвестный";
-    }
-    catch (ex) {
-      developer.log(ex.toString(), name: 'haiko');
-
-      return "Неизвестный";
-    }
-  }
 
   Future<bool> sendComment() async {
     try {
         http.Response resp = await http.get(
-          Uri.parse("http://localhost/api/central/comments/create?pid=${widget.model.id}&content=${commentController.text}"),
+          Uri.parse("${ServerApi.serverUrl}/api/central/comments/create?pid=${widget.model.id}&content=${commentController.text}"),
           headers: {
             'Authorization': 'Bearer $atoken',
             'Content-Type': 'application/json; charset=UTF-8',
@@ -157,7 +136,10 @@ class ArticlePartRatingWidgetState extends State<ArticlePartRatingWidget> {
 
         if (resp.statusCode == 200) {
           if (resp.body == "true") {
-            widget.model.comments.add(UserCommentModel(0, await getUserName("s"), commentController.text, DateTime.now(), 0, 0, []));
+            widget.model.comments.add(UserCommentModel(0, "you", commentController.text, DateTime.now(), 0, 0, []));
+            setState(() {
+              
+            });
           }
             
           return false;
@@ -173,19 +155,7 @@ class ArticlePartRatingWidgetState extends State<ArticlePartRatingWidget> {
     }
   }
 
-  Map<String, String> idNames = {};
-
-  void pullName(String id) async {
-    if (idNames.containsKey(id)) return;
-
-    String name = await getUserName(id);
-    idNames[id] = name;
-
-    setState(() {
-      
-    });
-  }
-
+  
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -272,6 +242,7 @@ class ArticlePartRatingWidgetState extends State<ArticlePartRatingWidget> {
             padding: EdgeInsets.all(15),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 10,
               children: [
                 Row(
                   children: [
@@ -280,11 +251,14 @@ class ArticlePartRatingWidgetState extends State<ArticlePartRatingWidget> {
                   ],
                 ),
                 ListView.builder(scrollDirection: Axis.vertical, shrinkWrap: true, itemCount: widget.model.comments.length, itemBuilder: (context, index) {
-                  developer.log("hi");
                   UserCommentModel cmodel = widget.model.comments[index];
-                  pullName(cmodel.userId);
+
+                  if (cmodel.userId != "you") {
+                    widget.pullName(cmodel.userId);
+                  }
                   
                   return Container(
+                    margin: EdgeInsets.all(5),
                     decoration: BoxDecoration(
                       color: Color.fromARGB(255, 83, 81, 81),
                       borderRadius: BorderRadius.circular(20),
@@ -300,7 +274,7 @@ class ArticlePartRatingWidgetState extends State<ArticlePartRatingWidget> {
                           height: 50,
                           child: Icon(Icons.comment),
                         ),
-                        SelectableText("${idNames[cmodel.userId] ?? "Неизвестный"}: ${cmodel.content}")
+                        SelectableText("${widget.idNames[cmodel.userId] ?? "Неизвестный"}: ${cmodel.content}")
                       ],
                     ),
                   );
