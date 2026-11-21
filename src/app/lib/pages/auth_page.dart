@@ -162,8 +162,6 @@ class AuthPageState extends State<AuthPage> {
             context: context,
             builder: (context) {
               return AlertDialog(
-                // Retrieve the text that the user has entered by
-                // using the TextEditingController.
                 content: Text("Ошибка регистрации: ${ex.toString()}"),
               );
             },

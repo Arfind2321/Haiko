@@ -233,8 +233,18 @@ class ArticleEditPageState extends State<ArticleEditPage> {
                 if (!widget.isNew)
                 TextButton(onPressed: () async {
                   bool ok = await removeArticle();
+
                   setState(() {
-                    
+                    if (!ok) {
+                      showDialog<void>(
+                        context: context,
+                        builder: (context) {
+                          return AlertDialog(
+                            content: Text("Не удалось удалить статью")
+                          );
+                        },
+                      );
+                    }
                   });
                 }, child: Text("Удалить")),
           ],

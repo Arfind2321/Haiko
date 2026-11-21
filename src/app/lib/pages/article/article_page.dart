@@ -420,8 +420,15 @@ class ArticlePageState extends State<ArticlePage> {
                     }, child: !isForking ? Text("Форк") : CircularProgressIndicator()),
 
                     TextButton(onPressed: () async {
-                      await FlutterClipboard.copy("${ServerApi.serverUrl}/article/${widget.articleId}");
-                      copiedSuccessfuly = true;
+                      try {
+                        await FlutterClipboard.copy("${ServerApi.serverUrl}/article/${widget.articleId}");
+                        setState(() {
+                          copiedSuccessfuly = true;
+                        });
+                      }
+                      catch (ex) {
+                        developer.log(ex.toString());
+                      }
                     }, child: Text(!copiedSuccessfuly ? "Скопировать ссылку на статью" : "Ссылка успешно скопирована")),
                   ],
                 ),

@@ -15,7 +15,7 @@ import 'main_non_web.dart'
 
 void main() {
   configureApp();
-  SharedPreferences.setPrefix("haiko");  
+  SharedPreferences.setPrefix("haiko-");  
   runApp(const MainApp());
 }
 
