@@ -7,19 +7,16 @@ import 'package:haiko/pages/auth_page.dart';
 import 'package:haiko/pages/error_page.dart';
 import 'package:haiko/pages/home_page.dart';
 import 'package:haiko/pages/profile_page.dart';
+import 'package:haiko/pages/search_page.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'main.dart'
+import 'main_non_web.dart'
     if (dart.library.js_interop) 'main_web.dart';
 
 void main() {
   configureApp();
   SharedPreferences.setPrefix("haiko");  
   runApp(const MainApp());
-}
-
-void configureApp() {
-  
 }
 
 final _router = GoRouter(
@@ -49,6 +46,23 @@ final _router = GoRouter(
         GoRoute(
           path: '/articles',
           builder: (context, state) => ArticlesPage(),
+        ),
+        GoRoute(
+          path: '/search',
+          builder: (context, state) => SearchPage(),
+        ),
+        GoRoute(
+          path: '/search/:q',
+          builder: (context, state) {
+            String? q = state.pathParameters['q'];
+
+            if (q != null) {
+              return SearchPage(searchQuery: q);
+            }
+            else {
+              return SearchPage();
+            }
+          },
         ),
         GoRoute(
           path: '/article/:id',

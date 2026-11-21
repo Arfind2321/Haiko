@@ -60,7 +60,7 @@ public static class Program
 
         builder.Services.AddGrpcClient<SearcherDatabase.SearcherDatabaseClient>(o =>
         {
-            o.Address = new("https://searcher:8080");
+            o.Address = new("http://grpc_server:50051");
         });
 
 

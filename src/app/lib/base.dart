@@ -21,8 +21,7 @@ class AppBase extends StatefulWidget  {
 }
 
 class AppBaseState extends State<AppBase> {
-  final _appBarNotifier = ValueNotifier<AppBarState>(AppBarState(authState: false));
-
+  ValueNotifier<AppBarState>? _appBarNotifier;
 
   @override
   void initState() {
@@ -35,7 +34,7 @@ class AppBaseState extends State<AppBase> {
 
   @override
   void dispose() {
-    _appBarNotifier.dispose();
+    _appBarNotifier!.dispose();
     super.dispose();
   }
 
@@ -72,10 +71,8 @@ class AppBaseState extends State<AppBase> {
         sp.setString("id", id!);
         sp.setString("userName", userName!);
 
-        authorized = true;
-
         setState(() {
-          //AppBarAuthController.of(context).updateAppBar(authState: true, userName: userName, id: id);
+          authorized = true;
         });
 
         return true;
@@ -87,7 +84,6 @@ class AppBaseState extends State<AppBase> {
     catch (ex) {
       developer.log(ex.toString(), name: 'haiko');
 
-      // возвращает то, что сохранено локально
       return false;
     }
   }
@@ -106,24 +102,33 @@ class AppBaseState extends State<AppBase> {
     if (token != null) {
       atoken = token;
       if (await tryAuth()) {
+        _appBarNotifier = ValueNotifier<AppBarState>(AppBarState(authState: true, userName: userName, id: id));
         authorized = true;
       }
       else {
+        _appBarNotifier = ValueNotifier<AppBarState>(AppBarState(authState: false));
         await prefs.remove("token");
       }
     }
+    else {
+      _appBarNotifier = ValueNotifier<AppBarState>(AppBarState(authState: false));
+    }
 
     setState(() {
-      AppBarAuthController.of(context).updateAppBar(authState: true, userName: userName, id: id);
+      
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_appBarNotifier == null) {
+      return Center(child: CircularProgressIndicator());
+    }
+    
     return AppBarAuthController(
-      appBarNotifier: _appBarNotifier,
+      appBarNotifier: _appBarNotifier!,
       child: ValueListenableBuilder<AppBarState>(
-        valueListenable: _appBarNotifier,
+        valueListenable: _appBarNotifier!,
         builder: (c, s, _) {
           authorized = s.authState;
 
@@ -172,7 +177,7 @@ class AppBaseState extends State<AppBase> {
                                 child: Row(
                                   spacing: 10,
                                   children: [
-                                    HaikoCricleAvatar(radius: 20, id: id ?? "null-avatar"),
+                                    if (!isLocal) HaikoCricleAvatar(radius: 20, id: id ?? "null-avatar"),
                                     Text(s.userName!)
                                   ],
                                 ),

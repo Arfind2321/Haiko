@@ -17,7 +17,12 @@ class HaikoCricleAvatarState extends State<HaikoCricleAvatar> {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      child: CircleAvatar(radius: widget.radius, backgroundImage: Image(image: CachedNetworkImageProvider("${ServerApi.serverUrl}/static/${widget.id}")).image),
+      child: CircleAvatar(radius: widget.radius, backgroundImage: Image(image:
+       (widget.id != "null-avatar" ? 
+        NetworkImage("${ServerApi.serverUrl}/static/${widget.id}.png?${DateTime.now().millisecondsSinceEpoch.toString()}'") : 
+        AssetImage("assets/favicon.png")
+       )).image,
+      )
     );
   }
 }

@@ -25,7 +25,7 @@ class UserCommentModel {
     'id': id,
     'userId': userId,
     'content': content,
-    'dateTime': dateTime,
+    'dateTime': dateTime.toString(),
     'likes': likes,
     'dislikes': dislikes,
     'answers': answers,

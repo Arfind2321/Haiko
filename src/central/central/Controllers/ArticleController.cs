@@ -35,40 +35,6 @@ namespace central.Controllers
             _applicationDbContext = applicationDbContext;
         }
 
-        [HttpGet("tc")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-        public async Task<IActionResult> CreateOrEditArticle()
-        {
-            if (User.Identity == null) return Unauthorized("no id");
-            if (string.IsNullOrEmpty(User.Identity.Name)) return Unauthorized("null name");
-
-            UserModel? userModel = await _userManager.FindByNameAsync(User.Identity.Name);
-
-            if (userModel == null) return Unauthorized("no user");
-
-            ArticleEditingResult result = await _articleService.CreateOrEditArticle(userModel, new()
-            {
-                Title = "Привет это тестовая статья",
-                Tags = ["тест", "статья", "docker"],
-                Parts = [
-                    new() {
-                        Content = "Это первая часть этой статьи.",
-                        Title = "Первый!"
-                    },
-                    new() {
-                        Content = "Это вторая часть этой статьи.",
-                        Title = "Второй!"
-                    },
-                    new() {
-                        Content = "Это третья часть этой статьи.",
-                        Title = "Третий!"
-                    }
-                ]
-            });
-
-            return Ok(result);
-        }
-
         [HttpPost("createOrEdit")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> CreateOrEditArticle([FromBody] ArticleEditingRequest req)
@@ -142,6 +108,55 @@ namespace central.Controllers
             }
 
             return Ok(articleModel);
+        }
+
+        [HttpGet("getLatest")]
+        public IActionResult GetLatest([FromQuery] int max = 10, [FromQuery] int page = 1)
+        {
+            List<object> result = [];
+
+            _applicationDbContext.Articles.Load();
+
+            List<ArticleModel> articles;
+
+            if (_applicationDbContext.Articles.Count() < max)
+            {
+                articles = _applicationDbContext.Articles.ToList();
+            }
+            else
+            {
+                articles = _applicationDbContext.Articles.Skip((page - 1) * max).Take(max).ToList();
+            }
+
+            foreach (var item in articles)
+            {
+                result.Add(new
+                {
+                    item.Id,
+                    item.Title,
+                    writerId = item.WriterID
+                });
+            }
+
+            return Ok(result);
+        }
+
+        [HttpGet("getMinimal")]
+        public IActionResult GetMinimalArticle([FromQuery] Guid id)
+        {
+            ArticleModel? articleModel = _articleService.GetById(id);
+
+            if (articleModel == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(new
+            {
+                articleModel.Id,
+                articleModel.Title,
+                writerId = articleModel.WriterID
+            });
         }
     }
 }

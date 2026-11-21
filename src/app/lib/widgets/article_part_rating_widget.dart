@@ -138,7 +138,7 @@ class ArticlePartRatingWidgetState extends State<ArticlePartRatingWidget> {
           if (resp.body == "true") {
             widget.model.comments.add(UserCommentModel(0, "you", commentController.text, DateTime.now(), 0, 0, []));
             setState(() {
-              
+              commentController.text = "";
             });
           }
             

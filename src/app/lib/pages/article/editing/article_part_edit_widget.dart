@@ -60,10 +60,11 @@ class ArticlePartEditWidgetState extends State<ArticlePartEditWidget> {
                 child: Row(
                   spacing: 10,
                   children: [
-                    SizedBox(width: 500, child:  TextField(controller: widget.title)),
-                    TextButton(onPressed: () {
+                    Expanded(child: Icon(Icons.padding)),
+                    Expanded(flex: 5, child: TextField(controller: widget.title)),
+                    Expanded(flex: 1, child: TextButton(onPressed: () {
                       widget.removeCallback(widget);
-                    }, child: Text("X"))
+                    }, child: Text("X")))
                   ],
                 ),
               ),

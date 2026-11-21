@@ -8,9 +8,9 @@ import 'package:haiko/models/article_model.dart';
 import 'package:haiko/models/minimal_article_model.dart';
 import 'package:haiko/widgets/haiko_cricle_avatar.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:file_picker/file_picker.dart';
 import 'dart:developer' as developer;
 
-import 'package:universal_html/html.dart' as html;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -28,6 +28,21 @@ class ProfilePageState extends State<ProfilePage> {
 
   String? userName;
   String? id;
+
+  void showError(String error) {
+    setState(() {
+      showDialog<void>(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            // Retrieve the text that the user has entered by
+            // using the TextEditingController.
+            content: Text(error),
+          );
+        },
+      );
+    });
+  }
 
   @override
   void initState() {
@@ -153,6 +168,45 @@ class ProfilePageState extends State<ProfilePage> {
     });
   }
 
+  void pickAvatar() async {
+    PlatformFile? file = await FilePicker.pickFile(dialogTitle: "Выберите аватар", type: FileType.image);
+
+    if (file == null) return;
+
+    if ((await file.length())! > 10485760) {
+        
+      return;
+    }
+
+    try {
+      var request = http.MultipartRequest("POST", Uri.parse("${ServerApi.serverUrl}/api/central/auth/uploadAvatar"));
+      request.headers["Authorization"] = "Bearer $atoken";
+      request.files.add(await http.MultipartFile.fromBytes(
+          'uploadedFile',
+          await file.readAsBytes(),
+          filename: "image.png"
+      ));
+      http.StreamedResponse resp = await request.send();
+
+      if (resp.statusCode == 200) {
+        setState(() {
+          GoRouter.of(context).refresh();
+        });
+
+        return;
+      }
+      else {
+        showError("Ошибка: ${resp.stream.toString()}");
+        return;
+      }
+    }
+    catch (ex) {
+      developer.log(ex.toString(), name: 'haiko');
+
+      return;
+    }
+  }
+
   void goAuth() async {
     String? token = await GoRouter.of(context).push<String>("/auth");
 
@@ -164,7 +218,6 @@ class ProfilePageState extends State<ProfilePage> {
       authorized = true;
       tryAuth();
         setState(() {
-        
       });
     }
   }
@@ -190,8 +243,18 @@ class ProfilePageState extends State<ProfilePage> {
             child: Row(
               spacing: 20,
               children: [
-                HaikoCricleAvatar(radius: 80, id: id ?? "null-avatar"),
-                SelectableText(userName ?? "кто то", style: TextStyle(fontSize: 36))
+                if (!isLocal) MouseRegion(
+                  cursor: !isLocal ? SystemMouseCursors.click : SystemMouseCursors.basic,
+                  child: GestureDetector(
+                    onTap: () {
+                      if (isLocal) return;
+
+                      pickAvatar();
+                    },
+                    child: HaikoCricleAvatar(radius: 80, id: id ?? "null-avatar"),
+                  ),
+                ),
+                SelectableText(userName ?? "кто то", style: TextStyle(fontSize: 30))
               ],
             ),
           ),
@@ -216,61 +279,67 @@ class ProfilePageState extends State<ProfilePage> {
           if (!isLocal) ListView.builder(scrollDirection: Axis.vertical, shrinkWrap: true, itemCount: articles.length, itemBuilder: (b, i) {
             MinimalArticleModel mam = articles[i];
 
-            return MouseRegion(
-              cursor: SystemMouseCursors.click,
-              child: GestureDetector(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Color.fromARGB(255, 41, 67, 45),
-                    borderRadius: BorderRadius.circular(20)
+            return Container(
+              margin: EdgeInsets.all(5),
+              child: MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: GestureDetector(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Color.fromARGB(255, 41, 67, 45),
+                      borderRadius: BorderRadius.circular(20)
+                    ),
+                    //margin: EdgeInsets.all(10),
+                    padding: EdgeInsets.all(30),
+                    child: Row(
+                      spacing: 10,
+                      children: [
+                        Expanded(flex: 3, child: Text(mam.title, style: TextStyle(fontSize: 20))),
+                        Expanded(flex: 1, child: TextButton(onPressed: () {
+                          GoRouter.of(context).push("/edit/${mam.id}");
+                        }, child: Text("Изменить")))
+                      ],
+                    ),
                   ),
-                  //margin: EdgeInsets.all(10),
-                  padding: EdgeInsets.all(30),
-                  child: Row(
-                    spacing: 20,
-                    children: [
-                      SelectableText(mam.title, style: TextStyle(fontSize: 24)),
-                      TextButton(onPressed: () {
-                        GoRouter.of(context).push("/edit/${mam.id}");
-                      }, child: Text("Изменить"))
-                    ],
-                  ),
-                ),
-                onTap: () {
-                  GoRouter.of(context).push("/article/${mam.id}");
-                },
-              )
+                  onTap: () {
+                    GoRouter.of(context).push("/article/${mam.id}");
+                  },
+                )
+              ),
             );
           }),
 
-          Text("Локальные статьи: ", style: TextStyle(fontSize: 36)),
-          ListView.builder(scrollDirection: Axis.vertical, shrinkWrap: true, itemCount: localArticles.length, itemBuilder: (b, i) {
+          if (!ServerApi.isWeb()) Text("Локальные статьи: ", style: TextStyle(fontSize: 36)),
+          if (!ServerApi.isWeb()) ListView.builder(scrollDirection: Axis.vertical, shrinkWrap: true, itemCount: localArticles.length, itemBuilder: (b, i) {
             ArticleModel mam = localArticles[i];
 
-            return MouseRegion(
-              cursor: SystemMouseCursors.click,
-              child: GestureDetector(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Color.fromARGB(255, 41, 67, 45),
-                    borderRadius: BorderRadius.circular(20)
+            return Container(
+              margin: EdgeInsets.all(5),
+              child: MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: GestureDetector(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Color.fromARGB(255, 41, 67, 45),
+                      borderRadius: BorderRadius.circular(20)
+                    ),
+                    //margin: EdgeInsets.all(10),
+                    padding: EdgeInsets.all(30),
+                    child: Row(
+                      spacing: 20,
+                      children: [
+                        Expanded(flex: 3, child: Text(mam.title, style: TextStyle(fontSize: 24))),
+                        if (!isLocal) Expanded(flex: 1, child: TextButton(onPressed: () {
+                          GoRouter.of(context).push("/edit/${mam.id}");
+                        }, child: Text("Изменить")))
+                      ],
+                    ),
                   ),
-                  //margin: EdgeInsets.all(10),
-                  padding: EdgeInsets.all(30),
-                  child: Row(
-                    spacing: 20,
-                    children: [
-                      SelectableText(mam.title, style: TextStyle(fontSize: 24)),
-                      TextButton(onPressed: () {
-                        GoRouter.of(context).push("/edit/${mam.id}");
-                      }, child: Text("Изменить"))
-                    ],
-                  ),
-                ),
-                onTap: () {
-                  GoRouter.of(context).push("/article/${mam.id}");
-                },
-              )
+                  onTap: () {
+                    GoRouter.of(context).push("/article/${mam.id}");
+                  },
+                )
+              ),
             );
           })
         ],

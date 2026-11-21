@@ -1,8 +1,0 @@
-# Use this workspace to collaborate
-workspace:
-  id: 1d58c469-5c96-474e-8e6a-9426aa8cb9e1
-
-localResources:
-  specs:
-    - ../src/protos/articleDatabase.proto
-    - ../src/protos/editingInvoke.proto

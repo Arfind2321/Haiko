@@ -73,7 +73,7 @@ namespace central.Controllers
 
                 if (result.Item1.Succeeded)
                 {
-                    if (result.Item2 == null) return StatusCode(403);
+                    if (result.Item2 == null) return BadRequest("Неправильный логин или пароль");
 
                     //await _signInManager.SignInAsync(result.Item2, true);
 
@@ -127,21 +127,6 @@ namespace central.Controllers
 
         }
 
-        [HttpGet("loginC/{u}/{p}")]
-        public async Task<IActionResult> LoginGet(string u, string p)
-        {
-            if (ModelState.IsValid)
-            {
-                var user = await _userManager.FindByNameAsync(u);
-                if (await _userManager.CheckPasswordAsync(user, p))
-                {
-                    return Ok(await GenerateJwtToken(user));
-                }
-            }
-
-            return BadRequest("Неправильный логин или пароль 2");
-        }
-
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginViewModel model)
         {
@@ -149,7 +134,7 @@ namespace central.Controllers
             {
                 var user = await _userManager.FindByNameAsync(model.Username);
 
-                if (user == null) return StatusCode(403);
+                if (user == null) return BadRequest("Неправильный логин или пароль");
 
                 var result = await _userManager.CheckPasswordAsync(user, model.Password);
 
@@ -170,6 +155,38 @@ namespace central.Controllers
         {
             await _signInManager.SignOutAsync();
             return Redirect("/");
+        }
+
+        [HttpPost("uploadAvatar")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<IActionResult> UploadAvatar(IFormFile uploadedFile)
+        {
+            if (uploadedFile != null)
+            {
+                if (User.Identity == null) return Unauthorized();
+                if (string.IsNullOrEmpty(User.Identity.Name)) return Unauthorized();
+
+                var user = await _userManager.FindByNameAsync(User.Identity.Name);
+
+                if (user == null)
+                {
+                    return Unauthorized();
+                }
+
+                if (uploadedFile.Length > 10485760)
+                {
+                    return BadRequest("Файл весит больше 10МБ");
+                }
+
+                using (var fileStream = new FileStream($"/static/static/{user.Id}.png", FileMode.Create))
+                {
+                    await uploadedFile.CopyToAsync(fileStream);
+                }
+
+                return Ok();
+            }
+
+            return RedirectToAction("Index");
         }
 
         [HttpGet("me")]
@@ -213,7 +230,7 @@ namespace central.Controllers
 
             foreach (var item in user.Articles)
             {
-                minimalArticleModels.Add(new() { id = item.Id, Title = item.Title });
+                minimalArticleModels.Add(new() { id = item.Id, Title = item.Title, WriterId = item.WriterID });
             }
 
             return Ok(new

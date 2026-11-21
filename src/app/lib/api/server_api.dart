@@ -1,13 +1,19 @@
 import 'dart:convert';
 
 import 'package:haiko/models/article_model.dart';
+import 'package:haiko/models/minimal_article_model.dart';
 import 'package:http/http.dart' as http;
 import 'dart:developer' as developer;
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class ServerApi {
-  static const serverUrl = "http://localhost";
+  static const serverUrl = "http://192.168.1.146";
+
+  static bool isWeb() {
+    return kIsWeb;
+  }
 
   static Future<ArticleModel?> getArticle(String articleId) async {
     try {
@@ -33,7 +39,77 @@ class ServerApi {
     }
   }
 
+  static Future<List<MinimalArticleModel>> getMinimalArticlesByQuery(String query) async {
+    try {
+      List<MinimalArticleModel> list = [];
+
+      for (String id in await getArticlesIdsByQuery(query)) {
+        MinimalArticleModel? mam = await getMinimalArticle(id);
+
+        if (mam != null) {
+          list.add(mam);
+        }
+      }
+
+      return list;
+    }
+    catch (ex) {
+      developer.log(ex.toString(), name: 'haiko');
+      return [];
+    }
+  }
+
+  static Future<List<String>> getArticlesIdsByQuery(String query) async {
+    try {
+      http.Response resp = await http.get(
+        Uri.parse("$serverUrl/api/searcher/search?search_request=$query"),
+        headers: {
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (resp.statusCode == 200) {
+        Map<String, dynamic> respContent = jsonDecode(resp.body) as Map<String, dynamic>;
+        return respContent["IDs"];
+      }
+      else {
+        return [];
+      }
+    }
+    catch (ex) {
+      developer.log(ex.toString(), name: 'haiko');
+      return [];
+    }
+  }
+
+  static Future<MinimalArticleModel?> getMinimalArticle(String articleId) async {
+    try {
+      http.Response resp = await http.get(
+        Uri.parse("$serverUrl/api/central/articles/getMinimal?id=$articleId"),
+        headers: {
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (resp.statusCode == 200) {
+        Map<String, dynamic> respContent = jsonDecode(resp.body) as Map<String, dynamic>;
+        return MinimalArticleModel.fromJson(respContent);
+      }
+      else {
+        return null;
+      }
+    }
+    catch (ex) {
+      developer.log(ex.toString(), name: 'haiko');
+      return null;
+    }
+  }
+
   static Future<bool> checkConnection() async {
+    if (isWeb()) return true;
+    
     final List<ConnectivityResult> connectivityResult = await (Connectivity().checkConnectivity());
 
     if (connectivityResult.contains(ConnectivityResult.mobile) ||

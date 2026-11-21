@@ -6,7 +6,6 @@ import 'package:haiko/controllers/app_bar_auth_state_controller.dart';
 import 'package:material_ui/material_ui.dart';
 import 'dart:developer' as developer;
 
-import 'package:universal_html/html.dart' as html;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -137,6 +136,10 @@ class AuthPageState extends State<AuthPage> {
             GoRouter.of(context).replace("/profile");
           }
         });
+
+        setState(() {
+          AppBarAuthController.of(context).updateAppBar(authState: true, userName: loginController.text, id: "");
+        });
       }
       else {
         setState(() {
@@ -144,8 +147,6 @@ class AuthPageState extends State<AuthPage> {
             context: context,
             builder: (context) {
               return AlertDialog(
-                // Retrieve the text that the user has entered by
-                // using the TextEditingController.
                 content: Text("Ошибка регистрации: ${resp.body}"),
               );
             },

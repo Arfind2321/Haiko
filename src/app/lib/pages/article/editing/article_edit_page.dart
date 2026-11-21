@@ -82,7 +82,7 @@ class ArticleEditPageState extends State<ArticleEditPage> {
 
       if (article == null) {
         setState(() {
-          GoRouter.of(context).pushReplacement("/error", extra: {"e": "Статья не найдена"});
+          GoRouter.of(context).pushReplacement("/error/Статья не найдена");
         });
         return;
       }
@@ -180,6 +180,8 @@ class ArticleEditPageState extends State<ArticleEditPage> {
   final titleController = TextEditingController();
   final tagsController = TextEditingController();
 
+  bool isSubmiting = false;
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -213,13 +215,21 @@ class ArticleEditPageState extends State<ArticleEditPage> {
                     
                   });
                 }, child: Text("+")),
-                TextButton(onPressed: () async {
+                !isSubmiting ? TextButton(onPressed: () async {
+                  if (isSubmiting) return;
+
+                  setState(() {
+                    isSubmiting = true;
+                  });
                   String? id = await updateArticle();
+                  setState(() {
+                    isSubmiting = false;
+                  });
 
                   if (id != null) {
                     
-                  };
-                }, child: Text(widget.isNew ? "Создать" : "Применить")),
+                  }
+                }, child: Text(widget.isNew ? "Создать" : "Применить")) : CircularProgressIndicator(),
                 if (!widget.isNew)
                 TextButton(onPressed: () async {
                   bool ok = await removeArticle();

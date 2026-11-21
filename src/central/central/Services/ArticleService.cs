@@ -68,19 +68,23 @@ namespace central.Services
                 _applicationDbContext.Articles.Add(articleModel);
                 user.Articles.Add(articleModel);
             }
-            
+
             await _applicationDbContext.SaveChangesAsync();
             await _userManager.UpdateAsync(user);
-            
-            //StatusResponse status = await UpdateArticle(articleModel);
 
-            if (true)//status.IsOK)
+            StatusResponse status = await UpdateArticle(articleModel);
+
+            if (status.IsOK)
             {
                 return ArticleEditingResult.Ok(articleModel.Id);
             }
             else
             {
-                return ArticleEditingResult.Error("Внутренняя ошибка");
+                if (request.IsNew)
+                {
+                    await RemoveById(user, articleModel.Id);
+                }
+                return ArticleEditingResult.Error("Внутренняя ошибка. Пересоздайте статью для появления в поиске");
             }
         }
 
@@ -141,7 +145,16 @@ namespace central.Services
 
             await _applicationDbContext.SaveChangesAsync();
 
-            return ArticleEditingResult.Ok(newModel.Id);
+            StatusResponse response = await UpdateArticle(newModel);
+
+            if (response.IsOK)
+            {
+                return ArticleEditingResult.Ok(newModel.Id);
+            }
+            else
+            {
+                return ArticleEditingResult.Error(response.Error);
+            }
         }
 
         public ArticleModel? GetById(Guid id)
@@ -173,6 +186,15 @@ namespace central.Services
             ArticleModel? article = GetById(id, user);
 
             if (article == null) return ArticleEditingResult.Error("Нет доступа");
+
+            foreach (var part in article.Contents)
+            {
+                foreach (var comment in part.Comments)
+                {
+                    _applicationDbContext.UserComments.Remove(comment);
+                }
+                _applicationDbContext.ArticleParts.Remove(part);
+            }
 
             user.Articles.Remove(article);
             _applicationDbContext.Articles.Remove(article);

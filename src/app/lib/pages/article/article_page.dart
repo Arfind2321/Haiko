@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:clipboard/clipboard.dart';
 import 'package:go_router/go_router.dart';
 import 'package:haiko/api/local_article_storage_api.dart';
 import 'package:haiko/api/server_api.dart';
@@ -173,7 +174,7 @@ class ArticlePageState extends State<ArticlePage> {
     if (articleModel == null) {
       setState(() {
         //Route route = MaterialPageRoute(builder: (context) => ErrorPage(error: "Статья не найдена"));
-        GoRouter.of(context).pushReplacement("/error", extra: {"e": "Статья не найдена"});
+        GoRouter.of(context).pushReplacement("/error/Статья не найдена");
       });
       return;
     }
@@ -323,6 +324,9 @@ class ArticlePageState extends State<ArticlePage> {
     }
   }
 
+  bool isForking = false;
+  bool copiedSuccessfuly = false;
+
   @override
   Widget build(BuildContext context) {
     if (model != null) {
@@ -333,7 +337,7 @@ class ArticlePageState extends State<ArticlePage> {
           children: [
                 SelectableText(
                   model!.title,
-                  style: TextStyle(fontSize: 72),
+                  style: TextStyle(fontSize: 48),
                 ),
                 Row(
                   children: [
@@ -389,7 +393,7 @@ class ArticlePageState extends State<ArticlePage> {
                       await clearArticleCompletion();
 
                     }, child: Text("Сбросить прохождение")),
-                    TextButton(onPressed: () async {
+                    if (!ServerApi.isWeb()) TextButton(onPressed: () async {
                         if (isSaved) {
                           await LocalArticleStorageApi.unsaveArticle(widget.articleId);
                           isSaved = false;
@@ -405,11 +409,23 @@ class ArticlePageState extends State<ArticlePage> {
                     }, child: Text(isSaved ? "Удалить" : "Сохранить")),
 
                     if (!isLocal) TextButton(onPressed: () async {
+                      if (isForking) return;
+                      setState(() {
+                        isForking = true;
+                      });
                       await fork();
-                    }, child: Text("Форк")),
+                      setState(() {
+                        isForking = false;
+                      });
+                    }, child: !isForking ? Text("Форк") : CircularProgressIndicator()),
+
+                    TextButton(onPressed: () async {
+                      await FlutterClipboard.copy("${ServerApi.serverUrl}/article/${widget.articleId}");
+                      copiedSuccessfuly = true;
+                    }, child: Text(!copiedSuccessfuly ? "Скопировать ссылку на статью" : "Ссылка успешно скопирована")),
                   ],
                 ),
-                Text("Прогресс будет сброшен при подключении к сети"),
+                if (isLocal) Text("Прогресс будет сброшен при подключении к сети"),
                 Column(
                   spacing: 10,
                   children: parts,

@@ -3,9 +3,6 @@ name: haiko
 services:
   central:
     user: "0:0"
-    environment:
-      DATABASE_USERNAME: "fhe98cew8uhxruehr89weu9rx"
-      DATABASE_PASSWORD: "xfu8wef89xsudiahs%9ufgsudid"
     build:
       context: .
       dockerfile: central/central/Dockerfile
@@ -22,5 +19,28 @@ services:
       - "80:80"
       - "443:443"
     volumes:
+      - ./app/build/web:/www:ro
       - ./nginx:/etc/nginx/conf.d/:ro
+      - ./static:/static:ro
+    restart: unless-stopped
+  grpc_server:
+    build:
+      context: ./vectorize
+      target: grpc_server
+    ports:
+      - "50051:50051"
+    volumes:
+      - ./vectorize/my_search_index:/app/my_search_index  
+    restart: unless-stopped
+
+  http_api:
+    build:
+      context: ./vectorize
+      target: http_api
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./vectorize/my_search_index:/app/my_search_index  # тот же том для чтения данных
+    depends_on:
+      - grpc_server
     restart: unless-stopped

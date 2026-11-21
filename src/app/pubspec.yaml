@@ -8,9 +8,12 @@ environment:
 
 dependencies:
   cached_network_image: ^4.0.7
+  clipboard: ^3.0.14
   connectivity_plus: ^7.3.2
+  file_picker: ^13.4.0
   flutter:
     sdk: flutter
+  flutter_launcher_icons: ^0.14.4
   flutter_web_plugins:
     sdk: flutter
   go_router: ^18.1.4
