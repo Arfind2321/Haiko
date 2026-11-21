@@ -2,8 +2,10 @@
 FROM python:3.12-slim AS base
 WORKDIR /app
 COPY requirements.txt .
-COPY ./multilingual-e5-small .
 RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install pip install huggingface_hub
+RUN  huggingface-cli download 
+RUN hf download intfloat/multilingual-e5-small --local-dir ./multilingual-e5-small
 
 # --- Этап 2: Сборка для первого сервиса ---
 FROM base AS grpc_server
