@@ -361,8 +361,5 @@ FodyWeavers.xsd
 .DS_Store?
 
 
-<<<<<<< HEAD
 model.py
-=======
 model.py
->>>>>>> eb7db41 (aaa)
