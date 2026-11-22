@@ -2,17 +2,27 @@ import 'dart:convert';
 
 import 'package:haiko/models/article_model.dart';
 import 'package:haiko/models/minimal_article_model.dart';
+import 'package:haiko/models/pdf_request_model.dart';
 import 'package:http/http.dart' as http;
 import 'dart:developer' as developer;
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:url_launcher/url_launcher.dart';
 
 class ServerApi {
   static const serverUrl = "http://192.168.1.146";
 
   static bool isWeb() {
     return kIsWeb;
+  }
+
+  static void downloadArticle(ArticleModel model) async {
+    PdfRequestModel requestModel = PdfRequestModel.fromArticleModel(model);
+
+    final Uri url = Uri.parse('$serverUrl/api/pdf/gen?query=${jsonEncode(requestModel)}');
+
+    await launchUrl(url);
   }
 
   static Future<ArticleModel?> getArticle(String articleId) async {

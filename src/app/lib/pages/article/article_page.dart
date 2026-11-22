@@ -419,6 +419,10 @@ class ArticlePageState extends State<ArticlePage> {
                       });
                     }, child: !isForking ? Text("Форк") : CircularProgressIndicator()),
 
+                    if (!isLocal) TextButton(onPressed: () async {
+                      ServerApi.downloadArticle(model!);
+                    }, child: Text("Скачать в PDF")),
+
                     TextButton(onPressed: () {
                       try {
                         Pasteboard.writeText("${ServerApi.serverUrl}/article/${widget.articleId}");
