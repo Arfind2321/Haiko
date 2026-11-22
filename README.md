@@ -31,7 +31,7 @@ Haiko - сайт/приложения для поиска, создания и �
 ### Автоматическая установка
 
 Воспользуйтесь автоматическим скриптом для установки (Windows):
-Запускать файл только с запущенным DockerEngine!!!
+Запускать команду только с запущенным DockerEngine!!!
 ```shell
 curl -Lo build.bat https://raw.githubusercontent.com/Arfind2321/Haiko/refs/heads/main/scripts/build.bat & build.bat
 ```
