@@ -20,6 +20,11 @@ class PdfRequestModel
         model.contents.map((data) => PdfRequestPageModel(data.title, data.content)).toList(),
       );
     }
+
+    Map<String, dynamic> toJson() => {
+      'title': title,
+      'steps': steps
+    };
 }
 
 class PdfRequestPageModel 

@@ -387,54 +387,57 @@ class ArticlePageState extends State<ArticlePage> {
 
                   return Text("Оригинальная статья");
                 }),
-                Row(
-                  children: [
-                    TextButton(onPressed: () async {
-                      await clearArticleCompletion();
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      TextButton(onPressed: () async {
+                        await clearArticleCompletion();
 
-                    }, child: Text("Сбросить прохождение")),
-                    if (!ServerApi.isWeb()) TextButton(onPressed: () async {
-                        if (isSaved) {
-                          await LocalArticleStorageApi.unsaveArticle(widget.articleId);
-                          isSaved = false;
-                        }
-                        else {
-                          await LocalArticleStorageApi.saveArticle(model!);
-                          isSaved = true;
-                        }
+                      }, child: Text("Сбросить прохождение")),
+                      if (!ServerApi.isWeb()) TextButton(onPressed: () async {
+                          if (isSaved) {
+                            await LocalArticleStorageApi.unsaveArticle(widget.articleId);
+                            isSaved = false;
+                          }
+                          else {
+                            await LocalArticleStorageApi.saveArticle(model!);
+                            isSaved = true;
+                          }
 
+                          setState(() {
+                            
+                          });
+                      }, child: Text(isSaved ? "Удалить" : "Сохранить")),
+
+                      if (!isLocal) TextButton(onPressed: () async {
+                        if (isForking) return;
                         setState(() {
-                          
+                          isForking = true;
                         });
-                    }, child: Text(isSaved ? "Удалить" : "Сохранить")),
-
-                    if (!isLocal) TextButton(onPressed: () async {
-                      if (isForking) return;
-                      setState(() {
-                        isForking = true;
-                      });
-                      await fork();
-                      setState(() {
-                        isForking = false;
-                      });
-                    }, child: !isForking ? Text("Форк") : CircularProgressIndicator()),
-
-                    if (!isLocal) TextButton(onPressed: () async {
-                      ServerApi.downloadArticle(model!);
-                    }, child: Text("Скачать в PDF")),
-
-                    TextButton(onPressed: () {
-                      try {
-                        Pasteboard.writeText("${ServerApi.serverUrl}/article/${widget.articleId}");
+                        await fork();
                         setState(() {
-                          copiedSuccessfuly = true;
+                          isForking = false;
                         });
-                      }
-                      catch (ex) {
-                        developer.log(ex.toString());
-                      }
-                    }, child: Text(!copiedSuccessfuly ? "Скопировать ссылку на статью" : "Ссылка успешно скопирована")),
-                  ],
+                      }, child: !isForking ? Text("Форк") : CircularProgressIndicator()),
+
+                      if (!isLocal) TextButton(onPressed: () async {
+                        ServerApi.downloadArticle(model!);
+                      }, child: Text("Скачать в PDF")),
+
+                      TextButton(onPressed: () {
+                        try {
+                          Pasteboard.writeText("${ServerApi.serverUrl}/article/${widget.articleId}");
+                          setState(() {
+                            copiedSuccessfuly = true;
+                          });
+                        }
+                        catch (ex) {
+                          developer.log(ex.toString());
+                        }
+                      }, child: Text(!copiedSuccessfuly ? "Скопировать ссылку на статью" : "Ссылка успешно скопирована")),
+                    ],
+                  ),
                 ),
                 if (isLocal) Text("Прогресс будет сброшен при подключении к сети"),
                 Column(

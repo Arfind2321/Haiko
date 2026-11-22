@@ -11,7 +11,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:url_launcher/url_launcher.dart';
 
 class ServerApi {
-  static const serverUrl = "http://192.168.1.146";
+  static const serverUrl = "http://localhost";
 
   static bool isWeb() {
     return kIsWeb;
