@@ -44,3 +44,10 @@ services:
     depends_on:
       - grpc_server
     restart: unless-stopped
+
+  pdf-generator:
+    build:
+      context: ./pdf-generator
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
