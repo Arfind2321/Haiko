@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:clipboard/clipboard.dart';
 import 'package:go_router/go_router.dart';
 import 'package:haiko/api/local_article_storage_api.dart';
 import 'package:haiko/api/server_api.dart';
@@ -9,6 +8,7 @@ import 'package:haiko/widgets/article_part_widget.dart';
 import 'package:intl/intl.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:http/http.dart' as http;
+import 'package:pasteboard/pasteboard.dart';
 import 'dart:developer' as developer;
 
 import 'package:shared_preferences/shared_preferences.dart';
@@ -419,9 +419,9 @@ class ArticlePageState extends State<ArticlePage> {
                       });
                     }, child: !isForking ? Text("Форк") : CircularProgressIndicator()),
 
-                    TextButton(onPressed: () async {
+                    TextButton(onPressed: () {
                       try {
-                        await FlutterClipboard.copy("${ServerApi.serverUrl}/article/${widget.articleId}");
+                        Pasteboard.writeText("${ServerApi.serverUrl}/article/${widget.articleId}");
                         setState(() {
                           copiedSuccessfuly = true;
                         });

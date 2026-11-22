@@ -3,8 +3,8 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
-  clipboard
   connectivity_plus
+  pasteboard
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
