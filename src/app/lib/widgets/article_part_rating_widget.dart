@@ -6,6 +6,7 @@ import 'package:haiko/models/article_part_model.dart';
 import 'package:haiko/models/user_comment_model.dart';
 import 'package:haiko/models/user_vote_model.dart';
 import 'package:haiko/models/user_vote_model_result.dart';
+import 'package:haiko/widgets/haiko_cricle_avatar.dart';
 import 'package:material_ui/material_ui.dart';
 import 'dart:developer' as developer;
 
@@ -269,12 +270,13 @@ class ArticlePartRatingWidgetState extends State<ArticlePartRatingWidget> {
                     child: Row(
                       spacing: 10,
                       children: [
-                        SizedBox( 
+                        Expanded(flex: 1, child: SizedBox( 
                           width: 50,
                           height: 50,
                           child: Icon(Icons.comment),
-                        ),
-                        SelectableText("${widget.idNames[cmodel.userId] ?? "Неизвестный"}: ${cmodel.content}")
+                        )),
+                        Expanded(flex: 1, child: HaikoCricleAvatar(id: cmodel.userId)),
+                        Expanded(flex: 20, child: SelectableText("${widget.idNames[cmodel.userId] ?? "Неизвестный"}: ${cmodel.content}"))
                       ],
                     ),
                   );
