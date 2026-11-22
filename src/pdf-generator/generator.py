@@ -5,6 +5,7 @@ from typing import List
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
+import json
 
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
@@ -397,6 +398,39 @@ def sanitize_filename(filename: str) -> str:
 
 
 @app.get("/instructions/pdf")
+def generate_instruction_pdf(data: InstructionRequest):
+    """
+    Создает PDF-инструкцию и возвращает ее клиенту.
+    """
+
+    try:
+        pdf_file = create_pdf(data)
+
+    except FileNotFoundError as error:
+        raise HTTPException(
+            status_code=500,
+            detail=str(error),
+        )
+
+    except Exception as error:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Ошибка при создании PDF: {error}",
+        )
+
+    filename = sanitize_filename(data.filename)
+
+    return StreamingResponse(
+        pdf_file,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": (
+                f'attachment; filename="{filename}"'
+            )
+        },
+    )
+'''
+@app.get("/instructions/pdf")
 def generate_instruction_pdf_get(
     title: str = Query(
         ...,
@@ -458,3 +492,51 @@ def generate_instruction_pdf_get(
             )
         },
     )
+
+'''
+
+@app.get("/api/pdf/gen")
+def generate_pdf_by_query(
+    query: str = Query(
+        ...,
+        description="JSON с данными инструкции",
+    ),
+):
+    """
+    GET /api/pdf/gen?query={...}
+    """
+
+    try:
+        # Преобразуем JSON-строку в Python-словарь
+        query_data = json.loads(query)
+
+        # Проверяем и валидируем данные через Pydantic-модель
+        instruction = InstructionRequest(**query_data)
+
+        # Создаем PDF
+        pdf_file = create_pdf(instruction)
+
+        # Очищаем имя файла
+        filename = sanitize_filename(instruction.filename)
+
+        return StreamingResponse(
+            pdf_file,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": (
+                    f'attachment; filename="{filename}"'
+                )
+            },
+        )
+
+    except json.JSONDecodeError:
+        raise HTTPException(
+            status_code=400,
+            detail="Параметр query содержит некорректный JSON",
+        )
+
+    except Exception as error:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Ошибка обработки запроса: {error}",
+        )
