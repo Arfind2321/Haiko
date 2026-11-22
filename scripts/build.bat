@@ -59,6 +59,12 @@ if %ERRORLEVEL% NEQ 0 (
 ECHO [INFO] Starting servers...
 
 cd ..
+
+mkdir static
+cd static
+mkdir static
+cd ../..
+
 call docker compose up -d
 
 if %ERRORLEVEL% NEQ 0 (
