@@ -63,7 +63,7 @@ cd ..
 mkdir static
 cd static
 mkdir static
-cd ../..
+cd ..
 
 call docker compose up -d
 
