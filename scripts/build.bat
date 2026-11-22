@@ -84,7 +84,7 @@ ECHO(
 
 pause
 
-ECHO Please, change app/api/server_api.dart -> serverUrl to your device ip.
+ECHO "Please, change app/api/server_api.dart -> serverUrl to your device ip."
 
 pause
 
