@@ -2,7 +2,7 @@ from io import BytesIO
 from pathlib import Path
 from typing import List
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -396,11 +396,41 @@ def sanitize_filename(filename: str) -> str:
 # ============================================================
 
 
-@app.post("/instructions/pdf")
-def generate_instruction_pdf(data: InstructionRequest):
+@app.get("/instructions/pdf")
+def generate_instruction_pdf_get(
+    title: str = Query(
+        ...,
+        min_length=1,
+        description="Заголовок инструкции",
+    ),
+    body: str = Query(
+        ...,
+        min_length=1,
+        description="Текст инструкции",
+    ),
+    filename: str = Query(
+        default="instruction.pdf",
+        description="Имя PDF-файла",
+    ),
+):
     """
-    Создает PDF-инструкцию и возвращает ее клиенту.
+    Создает PDF через GET-запрос.
+
+    Пример:
+
+    /instructions/pdf?title=Моя инструкция&body=Текст инструкции
     """
+
+    data = InstructionRequest(
+        title=title,
+        steps=[
+            InstructionStep(
+                title="Инструкция",
+                body=body,
+            )
+        ],
+        filename=filename,
+    )
 
     try:
         pdf_file = create_pdf(data)
@@ -417,14 +447,14 @@ def generate_instruction_pdf(data: InstructionRequest):
             detail=f"Ошибка при создании PDF: {error}",
         )
 
-    filename = sanitize_filename(data.filename)
+    safe_filename = sanitize_filename(filename)
 
     return StreamingResponse(
         pdf_file,
         media_type="application/pdf",
         headers={
             "Content-Disposition": (
-                f'attachment; filename="{filename}"'
+                f'attachment; filename="{safe_filename}"'
             )
         },
     )
